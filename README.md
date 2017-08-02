@@ -1,17 +1,6 @@
 # ru-law
 
-Code for Russian law research project. Includes scripts for grabbing info from Russian news and court case sites.
-
-## Try It Out
-
-To run the news_demo.py file (in the news directory), it is assumed you have a working version of Python and are familiar with pip.
-
-Follow these steps:
-1. Download Python 3 (see link below).
-2. Open the command prompt, use pip to install Beautiful Soup 4 (pip install beautifulsoup4).
-3. Do the same for Python Requests (pip install requests).
-3. Download this repository and navigate to it in your command prompt.
-4. Type "python news_demo.py" and this will start the demo.
+Code for Russian law research project including scripts for grabbing info from Russian news and court case sites.
 
 ## Built With
 
