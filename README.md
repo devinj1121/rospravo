@@ -1,18 +1,10 @@
-# ru-news
+# ru-law
 
-Code for Russian law research project. Includes scripts for grabbing info from Russian news sites.
+Code for Russian law research project. Includes scripts for grabbing info from Russian news and court case sites.
 
-news_support.py - Grabs info from Russian law news sites
+## Try It Out
 
-news.py - To run the news scrape
-
-news_demo.py - An interactive version of news.py
-
-Procfile, requirements - Files for Heroku configuration
-
-## Getting Started
-
-To run the news_demo.py file, it is assumed you have a working version of Python and are familiar with pip.
+To run the news_demo.py file (in the news directory), it is assumed you have a working version of Python and are familiar with pip.
 
 Follow these steps:
 1. Download Python 3 (see link below).
