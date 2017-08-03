@@ -5,7 +5,8 @@ Code for Russian law research project including scripts for grabbing info from R
 ## Built With
 
 * [Python 3](https://www.python.org/downloads/)
-* [Beautiful Soup 4](https://www.crummy.com/software/BeautifulSoup/) - For scraping information
+* [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/) - For extracting info from news sources
+* [Scrapy](https://scrapy.org/) - Used for crawling and scraping court cases
 * [Python Requests](http://docs.python-requests.org/en/master/) - For grabbing web pages
 * [Heroku](https://www.heroku.com/) - For hosting and scheduled running
 
