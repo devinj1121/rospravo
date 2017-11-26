@@ -11,7 +11,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="cases" target="1.5" />
+      <module name="cases" target="1.8" />
       <module name="solrj" target="1.5" />
     </bytecodeTargetLevel>
   </component>
