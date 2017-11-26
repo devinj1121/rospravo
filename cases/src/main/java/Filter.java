@@ -1,9 +1,11 @@
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.ZipException;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.events.XMLEvent;
@@ -26,7 +28,7 @@ public class Filter {
 
         // Assign root file of directory
         try {
-            root = new File("/media/dj1121/Seagate Expansion Drive/arb_sud/3-arbitrazhnyj-apellyacionnyj-sud-40025");
+            root = new File("/media/dj1121/Seagate Expansion Drive/arb_sud/4-arbitrazhnyj-apellyacionnyj-sud-40026");
             unzip(root);
 //            getFiles(root);
 
