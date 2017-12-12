@@ -4,10 +4,7 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.events.XMLEvent;
 import java.io.*;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 
 
@@ -69,26 +66,24 @@ public class XML {
             }
         }
         else {
-            try{
-                // Add root to input stream and create output stream
-                fis = new FileInputStream(root);
-                streams = Arrays.asList(new ByteArrayInputStream("<root>".getBytes()),fis, new ByteArrayInputStream("</root>".getBytes()));
-                is = new SequenceInputStream(Collections.enumeration(streams));
-                os = new FileOutputStream(root.getAbsolutePath());
+            // Read file into scanner
+            final List<String> lines = new ArrayList<>();
+            try (Scanner in = new Scanner(root)) {
+                while (in.hasNextLine())
+                    lines.add(in.nextLine());
+            }
+            catch(IOException ex){
+                ex.printStackTrace();
+            }
 
-                // Write from is -> os
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-
-                // Read from is to buffer
-                while((bytesRead = is.read(buffer)) !=-1){
-                    os.write(buffer, 0, bytesRead);
+            // Add root to file
+            try (PrintStream out = new PrintStream(root)) {
+                out.println("<root>");
+                for (String line : lines) {
+                    out.print("    ");
+                    out.println(line);
                 }
-                is.close();
-                os.flush();
-                os.close();
-                System.out.println("Added root to " + root.getName());
-
+                out.println("</root>");
             }
             catch(IOException ex){
                 ex.printStackTrace();
