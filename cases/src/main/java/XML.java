@@ -1,8 +1,3 @@
-import jdk.internal.util.xml.impl.Input;
-
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.events.XMLEvent;
 import java.io.*;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
@@ -13,6 +8,34 @@ public class XML {
 
     static Scanner stdin = new Scanner(System.in);
 
+    public static void main(String[] args){
+        boolean done = false;
+        System.out.println("Please select an (integer) option:\n\t1: Unzip\n\t2: Add Root Element\n\t3: Get Category");
+        do{
+            try{
+                int choice = stdin.nextInt();
+                switch (choice) {
+                    case 1:
+                        stdin.nextLine();
+                        unzip();
+                        done = true;
+                        break;
+                    case 2:
+                        stdin.nextLine();
+                        addRoots();
+                        done = true;
+                        break;
+                    default: System.out.print("Enter an integer 1-2: ");
+                }
+            }
+            catch(InputMismatchException e){
+                System.out.print("Enter an integer 1-2: ");
+                stdin.nextLine(); // Clear the scanner
+            }
+        }
+        while(!done);
+
+    }
     // Recursive method which unzips a file or file tree
     public static void unzip(){
         System.out.print("Please enter the FULL path of the root directory: ");
@@ -47,13 +70,12 @@ public class XML {
     }
 
     // Recursively adds root elements to xml files (if missing)
-    public static void addRoot() {
+    public static void addRoots() {
         System.out.print("Please enter the FULL path of the root directory: ");
-        addRootHelper(new File(stdin.nextLine()));
-
+        addRootsHelper(new File(stdin.nextLine()));
     }
 
-    private static void addRootHelper(File root){
+    private static void addRootsHelper(File root){
         FileInputStream fis;
         List<InputStream> streams;
         InputStream is;
@@ -62,7 +84,7 @@ public class XML {
         File[] directoryListing = root.listFiles();
         if (directoryListing != null) {
             for (File child : directoryListing) {
-                addRootHelper(child);
+                addRootsHelper(child);
             }
         }
         else {
@@ -88,35 +110,7 @@ public class XML {
             catch(IOException ex){
                 ex.printStackTrace();
             }
+            System.out.println("Root added to " + root.getName());
         }
-    }
-
-    // A method to parse a court XML file and get the category tag
-    public static String getCategory(File file) {
-        try {
-            InputStream in = new FileInputStream(file);
-            // Create a new XMLInputFactory and event reader
-            XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-            XMLEventReader eventReader = inputFactory.createXMLEventReader(in);
-
-            // Traverse the XML document
-            String curr = null;
-            while (eventReader.hasNext()) {
-                XMLEvent event = eventReader.nextEvent();
-                if (event.isStartElement()) {
-                    if (event.asStartElement().getName().getLocalPart()
-                            .equals("category")) {
-                        event = eventReader.nextEvent();
-                        curr = event.asCharacters().getData();
-                        continue;
-                    }
-                }
-            }
-            return curr;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 }
