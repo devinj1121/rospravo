@@ -10,7 +10,7 @@ public class XML {
 
     public static void main(String[] args){
         boolean done = false;
-        System.out.println("Please select an (integer) option:\n\t1: Unzip\n\t2: Add Root Element\n\t3: Get Category");
+        System.out.println("Please select an (integer) option:\n\t1: Unzip\n\t2: Normalize");
         do{
             try{
                 int choice = stdin.nextInt();
@@ -22,7 +22,7 @@ public class XML {
                         break;
                     case 2:
                         stdin.nextLine();
-                        addRoots();
+                        normalize();
                         done = true;
                         break;
                     default: System.out.print("Enter an integer 1-2: ");
@@ -69,22 +69,17 @@ public class XML {
         }
     }
 
-    // Recursively adds root elements to xml files (if missing)
-    public static void addRoots() {
+    // Formats XML for parsing
+    public static void normalize() {
         System.out.print("Please enter the FULL path of the root directory: ");
-        addRootsHelper(new File(stdin.nextLine()));
+        normalizeHelper(new File(stdin.nextLine()));
     }
 
-    private static void addRootsHelper(File root){
-        FileInputStream fis;
-        List<InputStream> streams;
-        InputStream is;
-        OutputStream os;
-
+    private static void normalizeHelper(File root){
         File[] directoryListing = root.listFiles();
         if (directoryListing != null) {
             for (File child : directoryListing) {
-                addRootsHelper(child);
+                normalizeHelper(child);
             }
         }
         else {
@@ -98,19 +93,32 @@ public class XML {
                 ex.printStackTrace();
             }
 
-            // Add root to file
+            // Normalize
             try (PrintStream out = new PrintStream(root)) {
+                char current;
                 out.println("<root>");
                 for (String line : lines) {
                     out.print("    ");
-                    out.println(line);
+                    for (int i = 0; i < line.length(); i++) {
+                        current = line.charAt(i);
+                        if ((current == 0x9) ||
+                                (current == 0xA) ||
+                                (current == 0xD) ||
+                                ((current >= 0x20) && (current <= 0xD7FF)) ||
+                                ((current >= 0xE000) && (current <= 0xFFFD)) ||
+                                ((current >= 0x10000) && (current <= 0x10FFFF))){
+                            out.print(Character.toString(current));
+                        }
+                    }
+                    out.println();
                 }
                 out.println("</root>");
+                out.close();
             }
-            catch(IOException ex){
+            catch(Exception ex){
                 ex.printStackTrace();
             }
-            System.out.println("Root added to " + root.getName());
+            System.out.println(root.getName() + " normalized.");
         }
     }
 }

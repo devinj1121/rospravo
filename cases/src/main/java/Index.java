@@ -1,22 +1,20 @@
 import org.apache.solr.common.SolrInputDocument;
-
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.events.XMLEvent;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import org.w3c.dom.*;
+import org.xml.sax.InputSource;
+
+import java.util.Scanner;
+import javax.xml.parsers.*;
 
 
 public class Index {
 
+    static Scanner stdin = new Scanner(System.in);
 
     public static void main(String args[]){
 
-
-
         // Build document
-        SolrInputDocument document = buildDoc();
+        SolrInputDocument document = buildSolrDoc();
 
 //        // Add document to Solr
 //        String urlString = "http://localhost:8983/solr/test";
@@ -33,43 +31,82 @@ public class Index {
     }
 
     // A method to parse a court XML file and builds a Solr document
-    // TODO Get fields
-    public static SolrInputDocument buildDoc() {
+    public static SolrInputDocument buildSolrDoc() {
         System.out.print("Please enter the FULL path of the root directory: ");
-        return buildDocHelper(new File(stdin.nextLine()));
+        return buildSolrDocHelper(new File(stdin.nextLine()));
 
     }
-    public static SolrInputDocument buildDocHelper(File root){
+    private static SolrInputDocument buildSolrDocHelper(File root) {
         File[] directoryListing = root.listFiles();
         if (directoryListing != null) {
             for (File child : directoryListing) {
-                buildDocHelper(child);
+                buildSolrDocHelper(child);
             }
-        }
-        else {
+        } else {
             try {
-                InputStream in = new FileInputStream(root);
-                // Create a new XMLInputFactory and event reader
-                XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-                XMLEventReader eventReader = inputFactory.createXMLEventReader(in);
 
-                // Traverse the XML document
-                String curr = null;
-                while (eventReader.hasNext()) {
-                    XMLEvent event = eventReader.nextEvent();
-                    if (event.isStartElement()) {
-                        if (event.asStartElement().getName().getLocalPart()
-                                .equals("category")) {
-                            event = eventReader.nextEvent();
-                            curr = event.asCharacters().getData();
-                        }
-                    }
-                }
-                return curr;
-            }
-            catch (Exception e) {
+                // XML Document Built
+                Document xmlDoc = buildXMLDoc(root.getAbsolutePath());
+
+                // Fields to grab
+                String category;
+                String location;
+                String date;
+                String plaintiff;
+                String defendant;
+                String thirdp;
+                String yavil;
+                String sought;
+                String awarded;
+                String winloss;
+
+                // Category
+                NodeList categoryNodes = xmlDoc.getElementsByTagName("category");
+
+                // Location
+
+                // Date
+
+                // Plaintiff
+
+                // Defendant
+
+                // Third Party
+
+                // Yavilsa?
+
+                // Amount Sought
+
+                // Amount Awarded
+
+                // Win or Loss
+
+
+//                }
+//                SolrInputDocument ret = new SolrInputDocument();
+//                ret.addField("Category", category);
+//                return ret;
+//            }
+
+            } catch (Exception e) {
                 e.printStackTrace();
             }
+
+        }
+        return null;
+    }
+    private static Document buildXMLDoc(String docString) {
+        try{
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setIgnoringComments(true);
+            factory.setIgnoringElementContentWhitespace(true);
+//            factory.setValidating(true);
+
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            return builder.parse(new InputSource(docString));
+        }
+        catch(Exception e){
+            e.printStackTrace();
         }
         return null;
     }
