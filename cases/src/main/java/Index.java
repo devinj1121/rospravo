@@ -15,8 +15,8 @@ public class Index {
 
         // Build document
         SolrInputDocument document = buildSolrDoc();
-
-//        // Add document to Solr
+        if(document != null){
+            // Add document to Solr
 //        String urlString = "http://localhost:8983/solr/test";
 //        SolrClient solr = new HttpSolrClient.Builder(urlString).build();
 //        try{
@@ -28,6 +28,7 @@ public class Index {
 //        catch(Exception e){
 //            System.out.println(e.getMessage());
 //        }
+        }
     }
 
     // A method to parse a court XML file and builds a Solr document
@@ -57,7 +58,6 @@ public class Index {
                 String plaintiff;
                 String defendant;
                 String thirdp;
-                String yavil;
                 String sought;
                 String awarded;
                 String winloss;
@@ -66,42 +66,82 @@ public class Index {
                 NodeList bodyNodes = xmlDoc.getElementsByTagName("body");
                 for (int i = 0; i < bodyNodes.getLength(); i++) {
                     Element e = (Element)bodyNodes.item(i);
-                    cdataString = e.getTextContent();
-                    cdataArray  = e.getTextContent().split(" ");
+                    cdataString = e.getTextContent().trim();
+                    cdataArray  = e.getTextContent().trim().split(" ");
                 }
 
                 // Category
-                if(cdataString.contains("о взыскании задолженности")){
-                    category = "о взыскании задолженности";
+                if(cdataString.toLowerCase().contains("о взыскании задолженности")){
+                    category = "О взыскании задолженности";
                 }
-                else if(cdataString.contains("о взыскании обязательных платежей")){
-                    category = "о взыскании обязательных платежей";
+                else if(cdataString.toLowerCase().contains("о взыскании обязательных платежей")){
+                    category = "О взыскании обязательных платежей";
+                }
+                else{
+                    return null;
                 }
 
+                System.out.println(root.getName() + " in category of interest!");
+                System.out.println(category);
+
                 // Location
-                for(int i = 0; i < cdataArray.length; i++){
-                    String curr = cdataArray[i];
-                    if(curr.contains("г.")){
-                        location = curr.substring(curr.indexOf("г.") + 1).replace(",", "").replace(".", "");
-                        break;
-                    }
+                if(cdataString.contains("г.")){
+                    String temp = cdataString.substring(cdataString.indexOf("г.") + 3);
+                    location = temp.substring(0, temp.indexOf(" "));
+                    System.out.println(location);
                 }
 
                 // Date
                 NodeList dateNodes = xmlDoc.getElementsByTagName("date");
                 for(int i = 0; i < dateNodes.getLength(); i++){
-                    date = dateNodes.item(i).getTextContent();
+                    date = dateNodes.item(i).getTextContent().trim();
+                    System.out.println(date);
+                    break;
                 }
 
                 // Plaintiff
+                if(cdataString.contains("от истца – ")){
+                    String temp = cdataString.substring(cdataString.indexOf("от истца – ") + 11);
+                    plaintiff = temp.substring(0, temp.indexOf(",")).trim();
+                    if(plaintiff.toLowerCase().contains("не явился")){
+                        plaintiff = "не явился";
+                    }
+                    System.out.println(plaintiff);
+                }
 
                 // Defendant
+                if(cdataString.contains("от ответчика – ")){
+                    String temp = cdataString.substring(cdataString.indexOf("от ответчика – ") + 15);
+                    defendant = temp.substring(0, temp.indexOf(",")).trim();
+                    if(defendant.toLowerCase().contains("не явился")){
+                        defendant = "не явился";
+                    }
+                    System.out.println(defendant);
+                }
 
                 // Third Party
-
-                // Yavilsa?
+                if(cdataString.contains("от 3-его лица – ")){
+                    String temp = cdataString.substring(cdataString.indexOf("от 3-его лица – ") + 16);
+                    thirdp = temp.substring(0, temp.indexOf(",")).trim();
+                    if(thirdp.toLowerCase().contains("не явился")){
+                        thirdp = "не явился";
+                    }
+                    System.out.println(thirdp);
+                }
 
                 // Amount Sought
+                // TODO Handle all cases
+                if(cdataString.contains("о взыскании")){
+                    String temp;
+                    if(cdataString.contains("о взыскании - ")){
+                        temp = cdataString.substring(cdataString.indexOf("о взыскании - ") + 14);
+                    }
+                    else{
+                        temp = cdataString.substring(cdataString.indexOf("о взыскании") + 13);
+                    }
+                    sought = temp.substring(0, temp.indexOf(".")).trim();
+                    System.out.println(sought);
+                }
 
                 // Amount Awarded
 
