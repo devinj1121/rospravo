@@ -3,6 +3,8 @@ import java.io.File;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Scanner;
 import javax.xml.parsers.*;
 
@@ -14,8 +16,9 @@ public class Index {
     public static void main(String args[]){
 
         // Build document
-        SolrInputDocument document = buildSolrDoc();
-        if(document != null){
+        SolrInputDocument doc = buildSolrDoc();
+        System.out.println(doc);
+        if(doc != null){
             // Add document to Solr
 //        String urlString = "http://localhost:8983/solr/test";
 //        SolrClient solr = new HttpSolrClient.Builder(urlString).build();
@@ -31,7 +34,7 @@ public class Index {
         }
     }
 
-    // A method to parse a court XML file and builds a Solr document
+    // A method to parse a court XML file and build a Solr document
     public static SolrInputDocument buildSolrDoc() {
         System.out.print("Please enter the FULL path of the root directory: ");
         return buildSolrDocHelper(new File(stdin.nextLine()));
@@ -45,122 +48,61 @@ public class Index {
             }
         } else {
             try {
-
                 // XML Document Built
                 Document xmlDoc = buildXMLDoc(root.getAbsolutePath());
-
-                // Fields to grab
-                String[] cdataArray = null;
-                String cdataString = null;
-                String category;
-                String location;
-                String date;
-                String plaintiff;
-                String defendant;
-                String thirdp;
-                String sought;
-                String awarded;
-                String winloss;
+                SolrInputDocument ret = new SolrInputDocument();
+                String cdata = null;
 
                 // Store CData
                 NodeList bodyNodes = xmlDoc.getElementsByTagName("body");
                 for (int i = 0; i < bodyNodes.getLength(); i++) {
-                    Element e = (Element)bodyNodes.item(i);
-                    cdataString = e.getTextContent().trim();
-                    cdataArray  = e.getTextContent().trim().split(" ");
+                    Element e = (Element) bodyNodes.item(i);
+                    cdata = e.getTextContent().trim();
                 }
 
                 // Category
-                if(cdataString.toLowerCase().contains("о взыскании задолженности")){
-                    category = "О взыскании задолженности";
-                }
-                else if(cdataString.toLowerCase().contains("о взыскании обязательных платежей")){
-                    category = "О взыскании обязательных платежей";
-                }
-                else{
+                if (cdata.toLowerCase().contains("о взыскании задолженности")) {
+                    ret.addField("Category", "О взыскании задолженности");
+                } else if (cdata.toLowerCase().contains("о взыскании обязательных платежей")) {
+                    ret.addField("Category", "О взыскании обязательных платежей");
+                } else {
                     return null;
                 }
 
                 System.out.println(root.getName() + " in category of interest!");
-                System.out.println(category);
 
                 // Location
-                if(cdataString.contains("г.")){
-                    String temp = cdataString.substring(cdataString.indexOf("г.") + 3);
-                    location = temp.substring(0, temp.indexOf(" "));
-                    System.out.println(location);
-                }
+                ret.addField("Location", getLocation(cdata));
 
                 // Date
                 NodeList dateNodes = xmlDoc.getElementsByTagName("date");
-                for(int i = 0; i < dateNodes.getLength(); i++){
-                    date = dateNodes.item(i).getTextContent().trim();
-                    System.out.println(date);
+                for (int i = 0; i < dateNodes.getLength(); i++) {
+                    ret.addField("Date", dateNodes.item(i).getTextContent().trim());
                     break;
                 }
+                // Parties
+                ret.addField("Plaintiff", getParty(cdata, "от истца – "));
+                ret.addField("Defendant", getParty(cdata, "от ответчика – "));
+                ret.addField("Third Party", getParty(cdata, "от 3-его лица – "));
 
-                // Plaintiff
-                if(cdataString.contains("от истца – ")){
-                    String temp = cdataString.substring(cdataString.indexOf("от истца – ") + 11);
-                    plaintiff = temp.substring(0, temp.indexOf(",")).trim();
-                    if(plaintiff.toLowerCase().contains("не явился")){
-                        plaintiff = "не явился";
-                    }
-                    System.out.println(plaintiff);
-                }
-
-                // Defendant
-                if(cdataString.contains("от ответчика – ")){
-                    String temp = cdataString.substring(cdataString.indexOf("от ответчика – ") + 15);
-                    defendant = temp.substring(0, temp.indexOf(",")).trim();
-                    if(defendant.toLowerCase().contains("не явился")){
-                        defendant = "не явился";
-                    }
-                    System.out.println(defendant);
-                }
-
-                // Third Party
-                if(cdataString.contains("от 3-его лица – ")){
-                    String temp = cdataString.substring(cdataString.indexOf("от 3-его лица – ") + 16);
-                    thirdp = temp.substring(0, temp.indexOf(",")).trim();
-                    if(thirdp.toLowerCase().contains("не явился")){
-                        thirdp = "не явился";
-                    }
-                    System.out.println(thirdp);
-                }
-
-                // Amount Sought
-                // TODO Handle all cases
-                if(cdataString.contains("о взыскании")){
-                    String temp;
-                    if(cdataString.contains("о взыскании - ")){
-                        temp = cdataString.substring(cdataString.indexOf("о взыскании - ") + 14);
-                    }
-                    else{
-                        temp = cdataString.substring(cdataString.indexOf("о взыскании") + 13);
-                    }
-                    sought = temp.substring(0, temp.indexOf(".")).trim();
-                    System.out.println(sought);
-                }
+                // Amount sought, interest, penalties
+                ret.addField("Amount Sought", getRubles(cdata, "о взыскании"));
+                ret.addField("Interest and Penalties", getRubles(cdata, "взыскании штраф"));
 
                 // Amount Awarded
 
                 // Win or Loss
 
-
-//                }
-//                SolrInputDocument ret = new SolrInputDocument();
-//                ret.addField("Category", category);
-//                return ret;
-//            }
+                // Return Solr doc
+                return ret;
 
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
         }
         return null;
     }
+
     private static Document buildXMLDoc(String docString) {
         try{
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -184,5 +126,50 @@ public class Index {
             return cd.getData();
         }
         return "";
+    }
+
+    public static String getRubles(String string, String chunkIdentifier){
+        // Grab chunks of text containing it, use 200 character buffer
+        ArrayList<String> chunks = new ArrayList<>();
+        // While occurrences found, keep adding to chunks
+        int currOcc = string.indexOf(chunkIdentifier);
+        while (currOcc >= 0) {
+            chunks.add(string.substring(currOcc + 1, currOcc + 201));
+            currOcc = string.indexOf(chunkIdentifier, currOcc + 1);
+        }
+        // Loop through chunks, find first occurrence of ruble value
+        for (int i = 0; i < chunks.size(); i++) {
+            String chunk = chunks.get(i);
+            String[] split = chunk.split(" ");
+            for (int j = 0; j < split.length; j++) {
+                if (split[j].equals("руб.")) {
+                    return split[j - 1];
+                }
+            }
+        }
+        return null;
+    }
+
+    public static String getLocation(String string){
+        if (string.contains("г.")) {
+            String temp = string.substring(string.indexOf("г.") + 3);
+            return temp.substring(0, temp.indexOf(" "));
+        }
+        return null;
+    }
+
+    public static String getParty(String string, String party){
+        String temp;
+        if (string.contains(party)) {
+             temp = string.substring(string.indexOf(party) + party.length());
+             temp = temp.substring(0, temp.indexOf(",")).trim();
+             if (temp.toLowerCase().contains("не явился")) {
+                 return "не явился";
+             }
+             else{
+                 return temp;
+             }
+        }
+        return null;
     }
 }
