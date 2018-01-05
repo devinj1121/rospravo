@@ -1,50 +1,53 @@
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.common.SolrInputDocument;
 import java.io.File;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
-
-import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import javax.xml.parsers.*;
 
-
+// Class to index documents into Solr
 public class Index {
 
-    static Scanner stdin = new Scanner(System.in);
+    // Global values
+    public static Scanner stdin = new Scanner(System.in);
+    public static List<SolrInputDocument> docs = new ArrayList<>();
 
     public static void main(String args[]){
 
-        // Build document
-        SolrInputDocument doc = buildSolrDoc();
-        System.out.println(doc);
-        if(doc != null){
-            // Add document to Solr
-//        String urlString = "http://localhost:8983/solr/test";
-//        SolrClient solr = new HttpSolrClient.Builder(urlString).build();
-//        try{
-//            solr.add(document);
-//            solr.commit();
-//            solr.deleteById("123456");
-//            solr.commit();
-//        }
-//        catch(Exception e){
-//            System.out.println(e.getMessage());
-//        }
+        // Build documents, setup server
+        buildSolrDocs();
+        String urlString = "http://localhost:8983/solr/test";
+        SolrClient solr = new HttpSolrClient.Builder(urlString).build();
+
+        // Add documents to Solr
+        for(SolrInputDocument doc : docs){
+            try{
+                solr.add(doc);
+                solr.commit();
+            }
+            catch(Exception e){
+                System.out.println(e.getMessage());
+            }
         }
     }
 
     // A method to parse a court XML file and build a Solr document
-    public static SolrInputDocument buildSolrDoc() {
+    public static void buildSolrDocs() {
         System.out.print("Please enter the FULL path of the root directory: ");
-        return buildSolrDocHelper(new File(stdin.nextLine()));
+        buildSolrDocsHelper(new File(stdin.nextLine()));
 
     }
-    private static SolrInputDocument buildSolrDocHelper(File root) {
+
+    // A recursive helper method for building SolrDocs
+    private static void buildSolrDocsHelper(File root) {
         File[] directoryListing = root.listFiles();
         if (directoryListing != null) {
             for (File child : directoryListing) {
-                buildSolrDocHelper(child);
+                buildSolrDocsHelper(child);
             }
         } else {
             try {
@@ -65,8 +68,9 @@ public class Index {
                     ret.addField("Category", "О взыскании задолженности");
                 } else if (cdata.toLowerCase().contains("о взыскании обязательных платежей")) {
                     ret.addField("Category", "О взыскании обязательных платежей");
-                } else {
-                    return null;
+                }
+                else{
+                    return;
                 }
 
                 System.out.println(root.getName() + " in category of interest!");
@@ -93,16 +97,16 @@ public class Index {
 
                 // Win or Loss
 
-                // Return Solr doc
-                return ret;
+                // Add Solr doc
+                docs.add(ret);
 
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        return null;
     }
 
+    // A method to use DOM parser to build XML doc tree
     private static Document buildXMLDoc(String docString) {
         try{
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -119,15 +123,7 @@ public class Index {
         return null;
     }
 
-    public static String getCharacterDataFromElement(Element e) {
-        Node child = e.getFirstChild();
-        if (child instanceof CharacterData) {
-            CharacterData cd = (CharacterData) child;
-            return cd.getData();
-        }
-        return "";
-    }
-
+    // A method to get ruble value from a string
     public static String getRubles(String string, String chunkIdentifier){
         // Grab chunks of text containing it, use 200 character buffer
         ArrayList<String> chunks = new ArrayList<>();
@@ -147,17 +143,19 @@ public class Index {
                 }
             }
         }
-        return null;
+        return "";
     }
 
+    // A method to get the location of a court case
     public static String getLocation(String string){
         if (string.contains("г.")) {
             String temp = string.substring(string.indexOf("г.") + 3);
-            return temp.substring(0, temp.indexOf(" "));
+            return temp.substring(0, temp.indexOf(" ")).trim();
         }
-        return null;
+        return "";
     }
 
+    // A method to get the parties of the court case
     public static String getParty(String string, String party){
         String temp;
         if (string.contains(party)) {
@@ -170,6 +168,6 @@ public class Index {
                  return temp;
              }
         }
-        return null;
+        return "";
     }
 }
