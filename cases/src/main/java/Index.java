@@ -20,19 +20,19 @@ public class Index {
 
         // Build documents, setup server
         buildSolrDocs();
-        String urlString = "http://localhost:8983/solr/test";
-        SolrClient solr = new HttpSolrClient.Builder(urlString).build();
+//        String urlString = "http://localhost:8983/solr/test";
+//        SolrClient solr = new HttpSolrClient.Builder(urlString).build();
 
         // Add documents to Solr
-        for(SolrInputDocument doc : docs){
-            try{
-                solr.add(doc);
-                solr.commit();
-            }
-            catch(Exception e){
-                System.out.println(e.getMessage());
-            }
-        }
+//        for(SolrInputDocument doc : docs){
+//            try{
+//                solr.add(doc);
+//                solr.commit();
+//            }
+//            catch(Exception e){
+//                System.out.println(e.getMessage());
+//            }
+//        }
     }
 
     // A method to parse a court XML file and build a Solr document
@@ -150,7 +150,8 @@ public class Index {
     public static String getLocation(String string){
         if (string.contains("г.")) {
             String temp = string.substring(string.indexOf("г.") + 3);
-            return temp.substring(0, temp.indexOf(" ")).trim();
+            // Deal with nbsp
+            return temp.substring(0, temp.indexOf(" ")).replace(String.valueOf((char) 160), "").trim();
         }
         return "";
     }
