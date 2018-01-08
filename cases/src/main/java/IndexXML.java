@@ -34,12 +34,32 @@ public class IndexXML implements Runnable {
             }
 
             // Category
-            if (cdata.toLowerCase().contains("о взыскании задолженности")) {
-                ret.addField("Category", "О взыскании задолженности");
-            } else if (cdata.toLowerCase().contains("о взыскании обязательных платежей")) {
-                ret.addField("Category", "О взыскании обязательных платежей");
-            } else {
-                return;
+            NodeList categoryNodes = xmlDoc.getElementsByTagName("category");
+            String category = "";
+            for (int i = 0; i < categoryNodes.getLength(); i++) {
+                category = categoryNodes.item(i).getTextContent().trim();
+                break;
+            }
+            switch(category) {
+                case "о взыскании задолженности":
+                    ret.addField("Category", "О взыскании задолженности");
+                    break;
+
+                case "о взыскании обязательных платежей":
+                    ret.addField("Category", "О взыскании обязательных платежей");
+                    break;
+
+                case "":
+                    if (cdata.toLowerCase().contains("о взыскании задолженности")) {
+                        ret.addField("Category", "О взыскании задолженности");
+                    } else if (cdata.toLowerCase().contains("о взыскании обязательных платежей")) {
+                        ret.addField("Category", "О взыскании обязательных платежей");
+                    } else {
+                        return;
+                    }
+                    break;
+                default:
+                    return;
             }
 
             System.out.println(file.getName() + " in category of interest!");
@@ -69,6 +89,11 @@ public class IndexXML implements Runnable {
             // Add Solr doc
 //            solr.add(ret);
 //            solr.commit();
+            System.out.println(ret.getFieldValue("Date"));
+            System.out.println(ret.getFieldValue("Location"));
+            System.out.println(ret.getFieldValue("Plaintiff"));
+            System.out.println(ret.getFieldValue("Amount Sought"));
+            System.out.println();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -81,7 +106,7 @@ public class IndexXML implements Runnable {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setIgnoringComments(true);
             factory.setIgnoringElementContentWhitespace(true);
-            factory.setValidating(true);
+            factory.setValidating(false);
 
             DocumentBuilder builder = factory.newDocumentBuilder();
             return builder.parse(new InputSource(docString));
@@ -117,9 +142,9 @@ public class IndexXML implements Runnable {
     // A method to get the location of a court case
     public static String getLocation(String string){
         if (string.contains("г.")) {
-            String temp = string.substring(string.indexOf("г.") + 3);
-            // Deal with nbsp
-            return temp.substring(0, temp.indexOf(" ")).replace(String.valueOf((char) 160), "").trim();
+            String temp = string.substring(string.indexOf("г.") + 2);
+            // Deal with nbsp and commas
+            return temp.substring(0, temp.indexOf(" ")).replace(String.valueOf((char) 160), "").replace(",", "").trim();
         }
         return "";
     }
