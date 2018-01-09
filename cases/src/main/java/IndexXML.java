@@ -74,9 +74,9 @@ public class IndexXML implements Runnable {
                 break;
             }
             // Parties
-            ret.addField("Plaintiff", getParty(cdata, "от истца – "));
-            ret.addField("Defendant", getParty(cdata, "от ответчика – "));
-            ret.addField("Third Party", getParty(cdata, "от 3-его лица – "));
+            ret.addField("Plaintiff", getParty(cdata, "истца – "));
+            ret.addField("Defendant", getParty(cdata, "ответчика – "));
+            ret.addField("Third Party", getParty(cdata, "3-его лица – "));
 
             // Amount sought, interest, penalties
             ret.addField("Amount Sought", getRubles(cdata, "о взыскании"));
@@ -141,12 +141,19 @@ public class IndexXML implements Runnable {
 
     // A method to get the location of a court case
     public static String getLocation(String string){
-        if (string.contains("г.")) {
-            String temp = string.substring(string.indexOf("г.") + 2);
-            // Deal with nbsp and commas
-            return temp.substring(0, temp.indexOf(" ")).replace(String.valueOf((char) 160), "").replace(",", "").trim();
-        }
-        return "";
+
+        // Four different possibilities
+        String temp = "";
+        if (string.contains("г. ")) temp = string.substring(string.indexOf("г. ") + 3);
+        else if(string.contains("г.")) temp = string.substring(string.indexOf("г.") + 2);
+        else if(string.contains("г</span><span>.")) temp = string.substring(string.indexOf("г</span><span>.") + 15);
+        else if(string.contains("г</span><span>. ")) temp = string.substring(string.indexOf("г</span><span>. ") + 16);
+
+        // General cleanup before return
+        temp = temp.substring(0, temp.indexOf(" ")).trim().replace(",", "");
+        if(temp.contains("&nbsp;")) temp = temp.substring(0, temp.indexOf("&nbsp;"));
+        if(temp.contains("</")) temp = temp.substring(0, temp.indexOf("</"));
+        return temp;
     }
 
     // A method to get the parties of the court case

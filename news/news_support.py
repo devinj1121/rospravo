@@ -1,5 +1,5 @@
 '''
-Script that grabs information from pravo.ru news website.
+Script that grabs information from pravo.ru/advo.ru news website.
 '''
 # Author: Devin Johnson, University of Wisconsin - Madison, djohnson58@wisc.edu
 # Bugs: None known
@@ -152,7 +152,7 @@ def filter_scrape():
     'Арбитражный процесс': '4328'}
 
     advo_dict = {'Адвокатура': '10', 'Юридическое орбазование': '23', 'Адвокатская кухня': '2',
-    'Адвокатура, государство, общество': '24', 'Адвокатская этика': '5', 'Этика юриста': '44' }
+    'Адвокатура, государство, общество': '24', 'Адвокатская этика': '5', 'Этика юриста': '44'}
 
     # Populate pages with urls
     pravo_pages = []
