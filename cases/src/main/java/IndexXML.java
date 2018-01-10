@@ -89,10 +89,10 @@ public class IndexXML implements Runnable {
             // Add Solr doc
 //            solr.add(ret);
 //            solr.commit();
-            System.out.println(ret.getFieldValue("Date"));
-            System.out.println(ret.getFieldValue("Location"));
+//            System.out.println(ret.getFieldValue("Date"));
+//            System.out.println(ret.getFieldValue("Location"));
             System.out.println(ret.getFieldValue("Plaintiff"));
-            System.out.println(ret.getFieldValue("Amount Sought"));
+//            System.out.println(ret.getFieldValue("Amount Sought"));
             System.out.println();
 
         } catch (Exception e) {
@@ -144,13 +144,12 @@ public class IndexXML implements Runnable {
 
         // Four different possibilities
         String temp = "";
-        if (string.contains("г. ")) temp = string.substring(string.indexOf("г. ") + 3);
+        if(string.contains("г</span><span>.")) temp = string.substring(string.indexOf("г</span><span>.") + 15);
         else if(string.contains("г.")) temp = string.substring(string.indexOf("г.") + 2);
-        else if(string.contains("г</span><span>.")) temp = string.substring(string.indexOf("г</span><span>.") + 15);
-        else if(string.contains("г</span><span>. ")) temp = string.substring(string.indexOf("г</span><span>. ") + 16);
 
         // General cleanup before return
-        temp = temp.substring(0, temp.indexOf(" ")).trim().replace(",", "");
+        temp = temp.trim(); // Must trim before substring or else deletes string
+        temp = temp.substring(0, temp.indexOf(" ")).replace(",", "");
         if(temp.contains("&nbsp;")) temp = temp.substring(0, temp.indexOf("&nbsp;"));
         if(temp.contains("</")) temp = temp.substring(0, temp.indexOf("</"));
         return temp;
@@ -160,14 +159,17 @@ public class IndexXML implements Runnable {
     public static String getParty(String string, String party){
         String temp;
         if (string.contains(party)) {
-             temp = string.substring(string.indexOf(party) + party.length());
-             temp = temp.substring(0, temp.indexOf(",")).trim();
-             if (temp.toLowerCase().contains("не явился")) {
-                 return "не явился";
-             }
-             else{
-                 return temp;
-             }
+            temp = string.substring(string.indexOf(party) + party.length());
+            if (temp.toLowerCase().contains("не явился") || temp.toLowerCase().contains("не явились")) {
+                return "не явился";
+            }
+            else{
+                // TODO Split, regex to find element with initials "1.2"
+                String[] temparr = temp.split(" ");
+                temp = temparr[0] + " " + temparr[1];
+                temp = temp.trim().replace(",", "");
+                return temp;
+            }
         }
         return "";
     }
