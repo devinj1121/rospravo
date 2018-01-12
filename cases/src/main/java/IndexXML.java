@@ -164,10 +164,13 @@ public class IndexXML implements Runnable {
                 return "не явился";
             }
             else{
-                // TODO Split, regex to find element with initials "1.2"
+                // TODO Split, regex to find element with initials "1.2" (finish)
                 String[] temparr = temp.split(" ");
-                temp = temparr[0] + " " + temparr[1];
-                temp = temp.trim().replace(",", "");
+                for(int i = 0; i < temparr.length; i++){
+                    if(temparr[i].matches("(^([А-Я]\\.)+$)")){
+                        // Finish here
+                    }
+                }
                 return temp;
             }
         }
