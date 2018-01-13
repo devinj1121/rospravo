@@ -74,9 +74,9 @@ public class IndexXML implements Runnable {
                 break;
             }
             // Parties
-            ret.addField("Plaintiff", getParty(cdata, "истца – "));
-            ret.addField("Defendant", getParty(cdata, "ответчика – "));
-            ret.addField("Third Party", getParty(cdata, "3-его лица – "));
+            ret.addField("Plaintiff", getParty(cdata, "от истца"));
+            ret.addField("Defendant", getParty(cdata, "от ответчика"));
+            ret.addField("Third Party", getParty(cdata, "от 3-его лица"));
 
             // Amount sought, interest, penalties
             ret.addField("Amount Sought", getRubles(cdata, "о взыскании"));
@@ -89,10 +89,11 @@ public class IndexXML implements Runnable {
             // Add Solr doc
 //            solr.add(ret);
 //            solr.commit();
-//            System.out.println(ret.getFieldValue("Date"));
-//            System.out.println(ret.getFieldValue("Location"));
+            System.out.println(ret.getFieldValue("Date"));
+            System.out.println(ret.getFieldValue("Location"));
             System.out.println(ret.getFieldValue("Plaintiff"));
-//            System.out.println(ret.getFieldValue("Amount Sought"));
+            System.out.println(ret.getFieldValue("Defendant"));
+            System.out.println(ret.getFieldValue("Amount Sought"));
             System.out.println();
 
         } catch (Exception e) {
@@ -141,39 +142,41 @@ public class IndexXML implements Runnable {
 
     // A method to get the location of a court case
     public static String getLocation(String string){
-
-        // Four different possibilities
         String temp = "";
         if(string.contains("г</span><span>.")) temp = string.substring(string.indexOf("г</span><span>.") + 15);
         else if(string.contains("г.")) temp = string.substring(string.indexOf("г.") + 2);
-
-        // General cleanup before return
-        temp = temp.trim(); // Must trim before substring or else deletes string
-        temp = temp.substring(0, temp.indexOf(" ")).replace(",", "");
-        if(temp.contains("&nbsp;")) temp = temp.substring(0, temp.indexOf("&nbsp;"));
-        if(temp.contains("</")) temp = temp.substring(0, temp.indexOf("</"));
+        temp = stringCleanup(temp);
+        if(temp.contains(" ")) temp = temp.substring(0,temp.indexOf(" "));
         return temp;
     }
 
     // A method to get the parties of the court case
     public static String getParty(String string, String party){
-        String temp;
-        if (string.contains(party)) {
+        String temp = "";
+        if (string.contains(party)){
             temp = string.substring(string.indexOf(party) + party.length());
+            temp = stringCleanup(temp);
             if (temp.toLowerCase().contains("не явился") || temp.toLowerCase().contains("не явились")) {
                 return "не явился";
             }
-            else{
-                // TODO Split, regex to find element with initials "1.2" (finish)
-                String[] temparr = temp.split(" ");
-                for(int i = 0; i < temparr.length; i++){
-                    if(temparr[i].matches("(^([А-Я]\\.)+$)")){
-                        // Finish here
-                    }
+            String[] temparr = temp.split(" ");
+            for(int i = 0; i < temparr.length; i++){
+                if(temparr[i].matches("^[А-Я]\\.[А-Я]\\.$")){
+                    temp = temparr[i-1] + " " + temparr[i];
+                    return temp;
                 }
-                return temp;
             }
         }
         return "";
+    }
+
+    // A method to cleanup XML before indexing
+    public static String stringCleanup(String temp){
+        temp = temp.trim();
+        if(temp.contains(",")) temp = temp.replace(",", "");
+        if(temp.contains("&nbsp;")) temp = temp.replace("&nbsp;", "");
+        if(temp.contains("–")) temp = temp.replace("–", "");
+        if(temp.contains("</")) temp = temp.substring(0, temp.indexOf("</"));
+        return temp;
     }
 }
