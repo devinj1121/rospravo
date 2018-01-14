@@ -85,14 +85,27 @@ public class IndexXML implements Runnable {
             // Amount Awarded
 
             // Win or Loss
+            NodeList resultNodes = xmlDoc.getElementsByTagName("result");
+            String result = "";
+            for (int i = 0; i < resultNodes.getLength(); i++) {
+                result = resultNodes.item(i).getTextContent().trim();
+                break;
+            }
+            if(result.contains("Оставить") || result.contains("Отказать")) ret.addField("Result", "Loss");
+            else if(result.contains("Success")) ret.addField("Result", "Win");
+            else{
+                ret.addField("Result", "Not listed");
+            }
 
             // Add Solr doc
 //            solr.add(ret);
 //            solr.commit();
             System.out.println(ret.getFieldValue("Date"));
+            System.out.println(ret.getFieldValue("Result"));
             System.out.println(ret.getFieldValue("Location"));
             System.out.println(ret.getFieldValue("Plaintiff"));
             System.out.println(ret.getFieldValue("Defendant"));
+            System.out.println(ret.getFieldValue("Third Party"));
             System.out.println(ret.getFieldValue("Amount Sought"));
             System.out.println();
 
@@ -133,11 +146,14 @@ public class IndexXML implements Runnable {
             String[] split = chunk.split(" ");
             for (int j = 0; j < split.length; j++) {
                 if (split[j].equals("руб.")) {
-                    return split[j - 1];
+                    if(split[j-2].matches("-?\\d+")){
+                        return stringCleanup(split[j-2] + "" + split[j-1]);
+                    }
+                    return stringCleanup(split[j - 1]);
                 }
             }
         }
-        return "";
+        return "Not listed";
     }
 
     // A method to get the location of a court case
@@ -145,6 +161,7 @@ public class IndexXML implements Runnable {
         String temp = "";
         if(string.contains("г</span><span>.")) temp = string.substring(string.indexOf("г</span><span>.") + 15);
         else if(string.contains("г.")) temp = string.substring(string.indexOf("г.") + 2);
+        else return "Not listed";
         temp = stringCleanup(temp);
         if(temp.contains(" ")) temp = temp.substring(0,temp.indexOf(" "));
         return temp;
@@ -167,15 +184,16 @@ public class IndexXML implements Runnable {
                 }
             }
         }
-        return "";
+        return "Not listed";
     }
 
     // A method to cleanup XML before indexing
     public static String stringCleanup(String temp){
         temp = temp.trim();
-        if(temp.contains(",")) temp = temp.replace(",", "");
-        if(temp.contains("&nbsp;")) temp = temp.replace("&nbsp;", "");
-        if(temp.contains("–")) temp = temp.replace("–", "");
+        if(temp.contains(",")) temp = temp.replaceAll(",", "");
+        if(temp.contains("&nbsp;")) temp = temp.replaceAll("&nbsp;", "");
+        if(temp.contains("–")) temp = temp.replaceAll("–", "");
+        if(temp.contains("-")) temp = temp.replaceAll("-", "");
         if(temp.contains("</")) temp = temp.substring(0, temp.indexOf("</"));
         return temp;
     }
