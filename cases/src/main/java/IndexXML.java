@@ -74,17 +74,18 @@ public class IndexXML implements Runnable {
                 break;
             }
             // Parties
-            ret.addField("Plaintiff", getParty(cdata, "от истца"));
-            ret.addField("Defendant", getParty(cdata, "от ответчика"));
-            ret.addField("Third Party", getParty(cdata, "от 3-его лица"));
+            // TODO завителя?
+            ret.addField("Plaintiff", getParty(cdata, new String[] {"истца", "завителя"}));
+            ret.addField("Defendant", getParty(cdata, new String[] {"ответчика"}));
+            ret.addField("Third Party", getParty(cdata, new String[] {"3-его лица", "от третьего лица"}));
 
-            // Amount sought, interest, penalties
+            // TODO Amount sought, interest, penalties
             ret.addField("Amount Sought", getRubles(cdata, "о взыскании"));
             ret.addField("Interest and Penalties", getRubles(cdata, "взыскании штраф"));
 
-            // Amount Awarded
+            // TODO Amount Awarded
 
-            // Win or Loss
+            // TODO Win or Loss
             NodeList resultNodes = xmlDoc.getElementsByTagName("result");
             String result = "";
             for (int i = 0; i < resultNodes.getLength(); i++) {
@@ -94,7 +95,7 @@ public class IndexXML implements Runnable {
             if(result.contains("Оставить") || result.contains("Отказать")) ret.addField("Result", "Loss");
             else if(result.contains("Success")) ret.addField("Result", "Win");
             else{
-                ret.addField("Result", "Not listed");
+                ret.addField("Result", getResult(cdata));
             }
 
             // Add Solr doc
@@ -131,7 +132,7 @@ public class IndexXML implements Runnable {
     }
 
     // A method to get ruble value from a string
-    public static String getRubles(String string, String chunkIdentifier){
+    private static String getRubles(String string, String chunkIdentifier){
         // Grab chunks of text containing it, use 200 character buffer
         ArrayList<String> chunks = new ArrayList<>();
         // While occurrences found, keep adding to chunks
@@ -157,7 +158,7 @@ public class IndexXML implements Runnable {
     }
 
     // A method to get the location of a court case
-    public static String getLocation(String string){
+    private static String getLocation(String string){
         String temp = "";
         if(string.contains("г</span><span>.")) temp = string.substring(string.indexOf("г</span><span>.") + 15);
         else if(string.contains("г.")) temp = string.substring(string.indexOf("г.") + 2);
@@ -167,34 +168,50 @@ public class IndexXML implements Runnable {
         return temp;
     }
 
+    // A method to get the result of a court case
+    private static String getResult(String string){
+        return null;
+    }
+
     // A method to get the parties of the court case
-    public static String getParty(String string, String party){
-        String temp = "";
-        if (string.contains(party)){
-            temp = string.substring(string.indexOf(party) + party.length());
-            temp = stringCleanup(temp);
-            if (temp.toLowerCase().contains("не явился") || temp.toLowerCase().contains("не явились")) {
-                return "не явился";
-            }
-            String[] temparr = temp.split(" ");
-            for(int i = 0; i < temparr.length; i++){
-                if(temparr[i].matches("^[А-Я]\\.[А-Я]\\.$")){
-                    temp = temparr[i-1] + " " + temparr[i];
-                    return temp;
+    private static String getParty(String string, String[] possibleNames){
+        // For each possible name of the party
+        for(int x = 0; x < possibleNames.length; x++){
+            String temp = "";
+            String party = possibleNames[x];
+            // If the cdata contains the party name try to grab the first occurrence, otherwise, go to next possible name
+            if (string.contains(party)){
+                // Cleanup the string first, make sure to cut before another party is mentioned
+                temp = string.substring(string.indexOf(party) + party.length());
+                temp = stringCleanup(temp);
+                if(temp.contains(" от ")) temp = temp.substring(0, temp.indexOf(" от "));
+
+                // Look for initials signifying a party
+                String[] tempArr = temp.split(" ");
+                for(int i = 0; i < tempArr.length; i++){
+                    if(tempArr[i].matches("^[А-Я]\\.[А-Я]\\.$")){
+                        temp = tempArr[i-1] + " " + tempArr[i];
+                        return temp;
+                    }
+                }
+                // If not found, look for signifier for not showing up
+                if (temp.toLowerCase().contains("не явился") || temp.toLowerCase().contains("не явились")) {
+                    return "не явился";
                 }
             }
         }
+        // If loop finishes, none of the information was found
         return "Not listed";
     }
 
     // A method to cleanup XML before indexing
-    public static String stringCleanup(String temp){
-        temp = temp.trim();
+    private static String stringCleanup(String temp){
         if(temp.contains(",")) temp = temp.replaceAll(",", "");
         if(temp.contains("&nbsp;")) temp = temp.replaceAll("&nbsp;", "");
         if(temp.contains("–")) temp = temp.replaceAll("–", "");
         if(temp.contains("-")) temp = temp.replaceAll("-", "");
         if(temp.contains("</")) temp = temp.substring(0, temp.indexOf("</"));
+        temp = temp.trim();
         return temp;
     }
 }
