@@ -64,8 +64,26 @@ public class IndexXML implements Runnable {
 
             System.out.println(file.getName() + " in category of interest!");
 
-            // Location
-            ret.addField("Location", getLocation(cdata));
+            // Region
+            NodeList regionNodes = xmlDoc.getElementsByTagName("region");
+            for (int i = 0; i < regionNodes.getLength(); i++) {
+                ret.addField("Region", regionNodes.item(i).getTextContent().trim());
+                break;
+            }
+
+            // Court
+            NodeList courtNodes = xmlDoc.getElementsByTagName("court");
+            for (int i = 0; i < courtNodes.getLength(); i++) {
+                ret.addField("Court", courtNodes.item(i).getTextContent().trim());
+                break;
+            }
+
+            // Judge
+            NodeList judgeNodes = xmlDoc.getElementsByTagName("judge");
+            for (int i = 0; i < judgeNodes.getLength(); i++) {
+                ret.addField("Judge", judgeNodes.item(i).getTextContent().trim());
+                break;
+            }
 
             // Date
             NodeList dateNodes = xmlDoc.getElementsByTagName("date");
@@ -73,9 +91,9 @@ public class IndexXML implements Runnable {
                 ret.addField("Date", dateNodes.item(i).getTextContent().trim());
                 break;
             }
+
             // Parties
-            // TODO завителя?
-            ret.addField("Plaintiff", getParty(cdata, new String[] {"истца", "завителя"}));
+            ret.addField("Plaintiff", getParty(cdata, new String[] {"истца", "заявителя"}));
             ret.addField("Defendant", getParty(cdata, new String[] {"ответчика"}));
             ret.addField("Third Party", getParty(cdata, new String[] {"3-его лица", "от третьего лица"}));
 
@@ -85,29 +103,27 @@ public class IndexXML implements Runnable {
 
             // TODO Amount Awarded
 
-            // TODO Win or Loss
+            // TODO Win or Loss (account for amount won/lost)
             NodeList resultNodes = xmlDoc.getElementsByTagName("result");
             String result = "";
             for (int i = 0; i < resultNodes.getLength(); i++) {
                 result = resultNodes.item(i).getTextContent().trim();
                 break;
             }
-            if(result.contains("Оставить") || result.contains("Отказать")) ret.addField("Result", "Loss");
-            else if(result.contains("Success")) ret.addField("Result", "Win");
-            else{
-                ret.addField("Result", getResult(cdata));
-            }
+            ret.addField("Result", result);
 
             // Add Solr doc
 //            solr.add(ret);
 //            solr.commit();
             System.out.println(ret.getFieldValue("Date"));
             System.out.println(ret.getFieldValue("Result"));
-            System.out.println(ret.getFieldValue("Location"));
+            System.out.println(ret.getFieldValue("Region"));
+            System.out.println(ret.getFieldValue("Court"));
+            System.out.println(ret.getFieldValue("Judge"));
             System.out.println(ret.getFieldValue("Plaintiff"));
-            System.out.println(ret.getFieldValue("Defendant"));
-            System.out.println(ret.getFieldValue("Third Party"));
-            System.out.println(ret.getFieldValue("Amount Sought"));
+//            System.out.println(ret.getFieldValue("Defendant"));
+//            System.out.println(ret.getFieldValue("Third Party"));
+//            System.out.println(ret.getFieldValue("Amount Sought"));
             System.out.println();
 
         } catch (Exception e) {
@@ -154,15 +170,15 @@ public class IndexXML implements Runnable {
                 }
             }
         }
-        return "Not listed";
+        return "";
     }
 
-    // A method to get the location of a court case
+    // A method to get the location of a court case if not listed in header
     private static String getLocation(String string){
         String temp = "";
         if(string.contains("г</span><span>.")) temp = string.substring(string.indexOf("г</span><span>.") + 15);
         else if(string.contains("г.")) temp = string.substring(string.indexOf("г.") + 2);
-        else return "Not listed";
+        else return "";
         temp = stringCleanup(temp);
         if(temp.contains(" ")) temp = temp.substring(0,temp.indexOf(" "));
         return temp;
@@ -180,9 +196,9 @@ public class IndexXML implements Runnable {
             String temp = "";
             String party = possibleNames[x];
             // If the cdata contains the party name try to grab the first occurrence, otherwise, go to next possible name
-            if (string.contains(party)){
-                // Cleanup the string first, make sure to cut before another party is mentioned
-                temp = string.substring(string.indexOf(party) + party.length());
+            if (string.toLowerCase().contains(party)){
+                // Clean up the string first, make sure to cut before another party is mentioned
+                temp = string.substring(string.toLowerCase().indexOf(party) + party.length());
                 temp = stringCleanup(temp);
                 if(temp.contains(" от ")) temp = temp.substring(0, temp.indexOf(" от "));
 
@@ -201,7 +217,7 @@ public class IndexXML implements Runnable {
             }
         }
         // If loop finishes, none of the information was found
-        return "Not listed";
+        return "NOT LISTED";
     }
 
     // A method to cleanup XML before indexing
