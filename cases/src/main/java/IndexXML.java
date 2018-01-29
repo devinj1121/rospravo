@@ -1,10 +1,14 @@
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.common.SolrInputDocument;
+import java.io.BufferedWriter;
 import java.io.File;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
+import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.xml.parsers.*;
 
 // Class to index documents into Solr
@@ -115,16 +119,26 @@ public class IndexXML implements Runnable {
             // Add Solr doc
 //            solr.add(ret);
 //            solr.commit();
-            System.out.println(ret.getFieldValue("Date"));
-            System.out.println(ret.getFieldValue("Result"));
-            System.out.println(ret.getFieldValue("Region"));
-            System.out.println(ret.getFieldValue("Court"));
-            System.out.println(ret.getFieldValue("Judge"));
-            System.out.println(ret.getFieldValue("Plaintiff"));
-//            System.out.println(ret.getFieldValue("Defendant"));
-//            System.out.println(ret.getFieldValue("Third Party"));
-//            System.out.println(ret.getFieldValue("Amount Sought"));
-            System.out.println();
+//            System.out.println("Date: " + ret.getFieldValue("Date"));
+//            System.out.println("Result: " + ret.getFieldValue("Result"));
+//            System.out.println("Region: " + ret.getFieldValue("Region"));
+//            System.out.println("Court: " + ret.getFieldValue("Court"));
+//            System.out.println("Judge: " + ret.getFieldValue("Judge"));
+//            System.out.println("Plaintiff: " + ret.getFieldValue("Plaintiff"));
+//            System.out.println("Defendant: " + ret.getFieldValue("Defendant"));
+//            System.out.println("Third Party: " + ret.getFieldValue("Third Party"));
+//            System.out.println("Amount sought: " + ret.getFieldValue("Amount Sought"));
+//            System.out.println("Penalties: ");
+//            System.out.println("Amount awarded: ");
+//            System.out.println("Win/Loss: ");
+              System.out.println();
+
+//            File file = new File("/home/dj1121/Desktop/test.txt");
+//            BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
+//            writer.append(' ');
+//            writer.append(ret.getFieldValue("Result") + "\n");
+//            writer.close();
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -210,6 +224,13 @@ public class IndexXML implements Runnable {
                         return temp;
                     }
                 }
+                // If no initials found, look for full name
+                Pattern pattern = Pattern.compile("([А-Я]+[а-я]+)\\s([А-Я]+[а-я]+)\\s([А-Я]+[а-я]+)");
+                Matcher matcher = pattern.matcher(temp);
+                if (matcher.find()){
+                    return matcher.group(0);
+                }
+
                 // If not found, look for signifier for not showing up
                 if (temp.toLowerCase().contains("не явился") || temp.toLowerCase().contains("не явились")) {
                     return "не явился";
