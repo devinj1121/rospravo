@@ -209,28 +209,26 @@ public class IndexXML implements Runnable {
         // List for storing multiples names found
         ArrayList<String> people = new ArrayList<>();
 
-        // For each possible name of the party
-        for(int x = 0; x < possibleNames.length; x++){
+        // For each possible name of the party (until found)
+        for(int x = 0; x < possibleNames.length && people.size() == 0; x++){
 
             // Create target area and clean up
             String temp = string;
             String party = possibleNames[x];
             temp = stringCleanup(temp);
 
-            if(file.getName().contains("303705776")){
+            // TODO Plaintiff nto grabbing both
+            if(file.getName().contains("303702463")){
                 System.out.println("hello");
             }
 
             // If the cdata contains the party name try to grab the first occurrence, otherwise, go to next possible name
             if (temp.toLowerCase().contains(party)){
 
-                // Clean up the string first, make sure to cut before another party is mentioned
+                // Make sure to cut before another party is mentioned
                 temp = string.substring(string.toLowerCase().indexOf(party) + party.length(), string.toLowerCase().indexOf(party) + 500);
-                if(temp.toLowerCase().contains("ответчик")) temp = temp.substring(0, temp.toLowerCase().indexOf("ответчик"));
-                if(temp.toLowerCase().contains("от трет")) temp = temp.substring(0, temp.toLowerCase().indexOf("от трет"));
-                if(temp.toLowerCase().contains("от 3-его")) temp = temp.substring(0, temp.toLowerCase().indexOf("3-его"));
-                // TODO deal with judge?
                 temp = stringCleanup(temp);
+                temp = removeOthers(temp);
 
                 // For each line in search region
                 String[] lines = temp.split("\\r?\\n");
@@ -238,9 +236,12 @@ public class IndexXML implements Runnable {
 
                     // Look for initials signifying a party
                     String[] tempArr = line.split(" ");
+                    Pattern pattern1 = Pattern.compile("([А-Я]\\s*\\.\\s*[А-Я]\\s*\\.)\\s*.*");
+
                     for(int i = 0; i < tempArr.length; i++){
-                        if(tempArr[i].matches("^[А-Я]\\s*\\.\\s*[А-Я]\\s*\\.\\s*$")){
-                            line = tempArr[i-1] + " " + tempArr[i];
+                        Matcher matcher = pattern1.matcher(tempArr[i]);
+                        if(matcher.find()){
+                            line = tempArr[i-1] + " " + matcher.group(1);
                             people.add(line);
                             break;
                         }
@@ -248,8 +249,8 @@ public class IndexXML implements Runnable {
 
                     // If no initials found, look for full name
                     if(people.size() == 0){
-                        Pattern pattern = Pattern.compile("([А-Я]+[а-я]+)\\s([А-Я]+[а-я]+)\\s([А-Я]+[а-я]+)");
-                        Matcher matcher = pattern.matcher(line);
+                        Pattern pattern2 = Pattern.compile("([А-Я]+[а-я]+)\\s([А-Я]+[а-я]+)\\s([А-Я]+[а-я]+)");
+                        Matcher matcher = pattern2.matcher(line);
                         if (matcher.find()){
                             people.add(matcher.group(0));
                         }
@@ -276,7 +277,21 @@ public class IndexXML implements Runnable {
         if(temp.contains("-")) temp = temp.replaceAll("-", "");
         if(temp.contains("<u>")) temp = temp.replaceAll("<u>", "");
         if(temp.contains("_")) temp = temp.replaceAll("_", "");
+        if(temp.contains("у  с  т  а  н  о  в  и  л :")) temp = temp.substring(0, temp.indexOf("у  с  т  а  н  о  в  и  л :"));
+        if(temp.contains("у  с  т  а  н  о  в  и  л  :")) temp = temp.substring(0, temp.indexOf("у  с  т  а  н  о  в  и  л  :"));
+        if(temp.contains("У  С  Т  А  Н  О  В  И  Л :")) temp = temp.substring(0, temp.indexOf("У  С  Т  А  Н  О  В  И  Л :"));
         temp = temp.trim();
+        return temp;
+    }
+
+    // Remove other names
+    private String removeOthers(String temp){
+        if(temp.toLowerCase().contains("ответчик")) temp = temp.substring(0, temp.toLowerCase().indexOf("ответчик"));
+        if(temp.toLowerCase().contains("истец")) temp = temp.substring(0, temp.toLowerCase().indexOf("истец"));
+        if(temp.toLowerCase().contains("истца")) temp = temp.substring(0, temp.toLowerCase().indexOf("истца"));
+        if(temp.toLowerCase().contains("от трет")) temp = temp.substring(0, temp.toLowerCase().indexOf("от трет"));
+        if(temp.toLowerCase().contains("от 3-его")) temp = temp.substring(0, temp.toLowerCase().indexOf("3-его"));
+        if(temp.toLowerCase().contains("судь")) temp = temp.substring(0, temp.toLowerCase().indexOf("судь"));
         return temp;
     }
 }
