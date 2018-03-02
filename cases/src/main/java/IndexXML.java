@@ -1,12 +1,11 @@
-import org.apache.solr.client.solrj.SolrClient;
-import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.common.SolrInputDocument;
-import java.io.BufferedWriter;
+
 import java.io.File;
+
+import org.apache.solr.common.StringUtils;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
-import java.io.FileWriter;
-import java.lang.reflect.Array;
+
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -101,11 +100,10 @@ public class IndexXML implements Runnable {
             ret.addField("Defendant", getParty(cdata, new String[] {"ответчика", "ответчик"}));
             ret.addField("Third Party", getParty(cdata, new String[] {"3-его лица","от третьего лица", "3-ое лицо", "третье лицо"}));
 
-            // TODO Amount sought, interest, penalties
-            ret.addField("Amount Sought", getRubles(cdata, "о взыскании"));
-            ret.addField("Interest and Penalties", getRubles(cdata, "взыскании штраф"));
-
-            // TODO Amount Awarded (if possible)
+            // Financials
+            ret.addField("Total amount sought", getRubles(cdata, new String[] {"o взыскании","в сумме"}));
+            ret.addField("Interest and Penalties", getRubles(cdata, new String[] {"взыскании штраф"}));
+//            ret.addField("Amount Awarded", getRubles(cdata, "взыскании штраф"));
 
             NodeList resultNodes = xmlDoc.getElementsByTagName("result");
             String result = "";
@@ -126,8 +124,8 @@ public class IndexXML implements Runnable {
             System.out.println("Plaintiff: " + ret.getFieldValues("Plaintiff"));
             System.out.println("Defendant: " + ret.getFieldValues("Defendant"));
             System.out.println("Third Party: " + ret.getFieldValues("Third Party"));
-//            System.out.println("Amount sought: " + ret.getFieldValue("Amount Sought"));
-//            System.out.println("Penalties: ");
+            System.out.println("Total amount sought: " + ret.getFieldValue("Total amount sought"));
+            System.out.println("Penalties: ");
 //            System.out.println("Amount awarded: ");
 //            System.out.println("Win/Loss: ");
             System.out.println(file.getName() + " in category of interest!");
@@ -162,26 +160,27 @@ public class IndexXML implements Runnable {
     }
 
     // A method to get ruble value from a string
-    private String getRubles(String string, String chunkIdentifier){
-        // Grab chunks of text containing it, use 200 character buffer
-        ArrayList<String> chunks = new ArrayList<>();
-        // While occurrences found, keep adding to chunks
-        int currOcc = string.indexOf(chunkIdentifier);
-        while (currOcc >= 0) {
-            chunks.add(string.substring(currOcc + 1, currOcc + 201));
-            currOcc = string.indexOf(chunkIdentifier, currOcc + 1);
+    private String getRubles(String string, String[] chunkIdentifiers){
+
+        if(file.getName().contains("305733225")){
+            System.out.println("hello");
         }
-        // Loop through chunks, find first occurrence of ruble value
-        for (int i = 0; i < chunks.size(); i++) {
-            String chunk = chunks.get(i);
-            String[] split = chunk.split(" ");
-            for (int j = 0; j < split.length; j++) {
-                if (split[j].equals("руб.")) {
-                    if(split[j-2].matches("-?\\d+")){
-                        return stringCleanup(split[j-2] + "" + split[j-1]);
-                    }
-                    return stringCleanup(split[j - 1]);
+        for(int a = 0; a < chunkIdentifiers.length; a++){
+            // Grab chunks of text containing string, use 200 character buffer
+            ArrayList<String> chunks = new ArrayList<>();
+            int currOcc = string.toLowerCase().indexOf(chunkIdentifiers[a]);
+            while (currOcc >= 0) {
+                chunks.add(string.substring(currOcc + 1, currOcc + 201));
+                currOcc = string.toLowerCase().indexOf(chunkIdentifiers[a], currOcc + 1);
+            }
+            for (int i = 0; i < chunks.size(); i++) {
+                String chunk = chunks.get(i);
+                String[] split = chunk.split("\\s+");
+                String toReturn = "";
+                for (int j = 0; j < split.length; j++){
+
                 }
+                return toReturn;
             }
         }
         return "";
@@ -217,11 +216,6 @@ public class IndexXML implements Runnable {
             String party = possibleNames[x];
             temp = stringCleanup(temp);
 
-            // TODO Plaintiff nto grabbing both
-            if(file.getName().contains("303702463")){
-                System.out.println("hello");
-            }
-
             // If the cdata contains the party name try to grab the first occurrence, otherwise, go to next possible name
             if (temp.toLowerCase().contains(party)){
 
@@ -234,34 +228,28 @@ public class IndexXML implements Runnable {
                 String[] lines = temp.split("\\r?\\n");
                 for(String line:lines){
 
-                    // Look for initials signifying a party
+                    // Look for initials signifying a party, add each one
                     String[] tempArr = line.split(" ");
                     Pattern pattern1 = Pattern.compile("([А-Я]\\s*\\.\\s*[А-Я]\\s*\\.)\\s*.*");
-
                     for(int i = 0; i < tempArr.length; i++){
                         Matcher matcher = pattern1.matcher(tempArr[i]);
                         if(matcher.find()){
-                            line = tempArr[i-1] + " " + matcher.group(1);
-                            people.add(line);
-                            break;
+                            people.add(tempArr[i-1] + " " + matcher.group(1));
                         }
                     }
 
-                    // If no initials found, look for full name
-                    if(people.size() == 0){
-                        Pattern pattern2 = Pattern.compile("([А-Я]+[а-я]+)\\s([А-Я]+[а-я]+)\\s([А-Я]+[а-я]+)");
-                        Matcher matcher = pattern2.matcher(line);
-                        if (matcher.find()){
-                            people.add(matcher.group(0));
-                        }
+                    // Look for full name
+                    Pattern pattern2 = Pattern.compile("([А-Я]+[а-я]+\\s[А-Я]+[а-я]+\\s[А-Я]+[а-я]+)");
+                    Matcher matcher2 = pattern2.matcher(line);
+                    while(matcher2.find()){
+                        people.add(matcher2.group(1));
                     }
 
-
-                    // If not found, look for signifier for not showing up
-                    if(people.size() == 0){
-                        if (line.toLowerCase().contains("не явился") || line.toLowerCase().contains("не явились")) {
-                            people.add("не явился");
-                        }
+                    // Look for signifier for not showing up
+                    Pattern pattern3 = Pattern.compile("не явился|не явились");
+                    Matcher matcher3 = pattern3.matcher(line);
+                    while(matcher3.find()){
+                        people.add(matcher3.group(0));
                     }
                 }
             }
@@ -277,6 +265,8 @@ public class IndexXML implements Runnable {
         if(temp.contains("-")) temp = temp.replaceAll("-", "");
         if(temp.contains("<u>")) temp = temp.replaceAll("<u>", "");
         if(temp.contains("_")) temp = temp.replaceAll("_", "");
+        if(temp.contains("<span>")) temp = temp.replaceAll("<span>", "");
+        if(temp.contains("</span>")) temp = temp.replaceAll("</span>", "");
         if(temp.contains("у  с  т  а  н  о  в  и  л :")) temp = temp.substring(0, temp.indexOf("у  с  т  а  н  о  в  и  л :"));
         if(temp.contains("у  с  т  а  н  о  в  и  л  :")) temp = temp.substring(0, temp.indexOf("у  с  т  а  н  о  в  и  л  :"));
         if(temp.contains("У  С  Т  А  Н  О  В  И  Л :")) temp = temp.substring(0, temp.indexOf("У  С  Т  А  Н  О  В  И  Л :"));
