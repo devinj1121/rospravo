@@ -18,7 +18,6 @@ public class IndexXML implements Runnable {
     SolrInputDocument ret = new SolrInputDocument();
 
     public IndexXML(File file) {
-
         this.file = file;
     }
 
@@ -101,7 +100,7 @@ public class IndexXML implements Runnable {
             ret.addField("Third Party", getParty(cdata, new String[] {"3-его лица","от третьего лица", "3-ое лицо", "третье лицо"}));
 
             // Financials
-            ret.addField("Total amount sought", getRubles(cdata, new String[] {"o взыскании","в сумме"}));
+            ret.addField("Total amount sought", getRubles(cdata, new String[] {"o взыскании","сумме"}));
             ret.addField("Interest and Penalties", getRubles(cdata, new String[] {"взыскании штраф"}));
 //            ret.addField("Amount Awarded", getRubles(cdata, "взыскании штраф"));
 
@@ -161,40 +160,36 @@ public class IndexXML implements Runnable {
 
     // A method to get ruble value from a string
     private String getRubles(String string, String[] chunkIdentifiers){
-
-        if(file.getName().contains("305733225")){
-            System.out.println("hello");
-        }
         for(int a = 0; a < chunkIdentifiers.length; a++){
             // Grab chunks of text containing string, use 200 character buffer
             ArrayList<String> chunks = new ArrayList<>();
             int currOcc = string.toLowerCase().indexOf(chunkIdentifiers[a]);
             while (currOcc >= 0) {
-                chunks.add(string.substring(currOcc + 1, currOcc + 201));
-                currOcc = string.toLowerCase().indexOf(chunkIdentifiers[a], currOcc + 1);
+                chunks.add(string.substring(currOcc, currOcc + 201));
+                currOcc = string.toLowerCase().indexOf(chunkIdentifiers[a], currOcc + chunkIdentifiers[a].length());
             }
             for (int i = 0; i < chunks.size(); i++) {
                 String chunk = chunks.get(i);
-                String[] split = chunk.split("\\s+");
+                String[] split = chunk.split("\\s+|\\h+");
                 String toReturn = "";
-                for (int j = 0; j < split.length; j++){
-
+                for(int j = 0; j < split.length; j++){
+                    if(!chunkIdentifiers[a].contains(split[j])){
+                        if(split[j].contains("руб") && split[j].matches("\\d+.+")){
+                            toReturn += split[j].substring(0, split[j].indexOf("р"));
+                            break;
+                        }
+                        else if(split[j].contains("руб")){
+                            break;
+                        }
+                        else{
+                            toReturn += split[j];
+                        }
+                    }
                 }
-                return toReturn;
+                return stringCleanup(toReturn).replaceAll("[^\\d.]", "");
             }
         }
         return "";
-    }
-
-    // A method to get the location of a court case if not listed in header
-    private String getLocation(String string){
-        String temp = "";
-        if(string.contains("г</span><span>.")) temp = string.substring(string.indexOf("г</span><span>.") + 15);
-        else if(string.contains("г.")) temp = string.substring(string.indexOf("г.") + 2);
-        else return "";
-        temp = stringCleanup(temp);
-        if(temp.contains(" ")) temp = temp.substring(0,temp.indexOf(" "));
-        return temp;
     }
 
     // A method to get the result of a court case
