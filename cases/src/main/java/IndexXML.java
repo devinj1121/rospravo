@@ -101,8 +101,8 @@ public class IndexXML implements Runnable {
 
             // Financials
             ret.addField("Total amount sought", getRubles(cdata, new String[] {"o взыскании","сумме"}));
-            ret.addField("Interest and Penalties", getRubles(cdata, new String[] {"взыскании штраф"}));
-//            ret.addField("Amount Awarded", getRubles(cdata, "взыскании штраф"));
+            ret.addField("Interest and Penalties", getRubles(cdata, new String[] {"штраф", "пени", "неустойки"}));
+            ret.addField("Amount Awarded", getRubles(cdata, new String[] {"взыскании штраф"}));
 
             NodeList resultNodes = xmlDoc.getElementsByTagName("result");
             String result = "";
@@ -124,18 +124,10 @@ public class IndexXML implements Runnable {
             System.out.println("Defendant: " + ret.getFieldValues("Defendant"));
             System.out.println("Third Party: " + ret.getFieldValues("Third Party"));
             System.out.println("Total amount sought: " + ret.getFieldValue("Total amount sought"));
-            System.out.println("Penalties: ");
-//            System.out.println("Amount awarded: ");
-//            System.out.println("Win/Loss: ");
+            System.out.println("Penalties: " + ret.getFieldValue("Interest and Penalties"));
+            System.out.println("Amount Awarded: " + ret.getFieldValue("Amount Awarded"));
             System.out.println(file.getName() + " in category of interest!");
             System.out.println();
-
-//            File file = new File("/home/dj1121/Desktop/test.txt");
-//            BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
-//            writer.append(' ');
-//            writer.append(ret.getFieldValue("Result") + "\n");
-//            writer.close();
-
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -160,12 +152,18 @@ public class IndexXML implements Runnable {
 
     // A method to get ruble value from a string
     private String getRubles(String string, String[] chunkIdentifiers){
+
+        if(file.getName().contains("305733221")){
+            System.out.println("hello");
+        }
         for(int a = 0; a < chunkIdentifiers.length; a++){
             // Grab chunks of text containing string, use 200 character buffer
             ArrayList<String> chunks = new ArrayList<>();
             int currOcc = string.toLowerCase().indexOf(chunkIdentifiers[a]);
             while (currOcc >= 0) {
-                chunks.add(string.substring(currOcc, currOcc + 201));
+                if (string.substring(currOcc, currOcc + 201).contains("руб")){
+                    chunks.add(string.substring(currOcc, currOcc + 201));
+                }
                 currOcc = string.toLowerCase().indexOf(chunkIdentifiers[a], currOcc + chunkIdentifiers[a].length());
             }
             for (int i = 0; i < chunks.size(); i++) {
@@ -190,11 +188,6 @@ public class IndexXML implements Runnable {
             }
         }
         return "";
-    }
-
-    // A method to get the result of a court case
-    private String getResult(String string){
-        return null;
     }
 
     // A method to get the parties of the court case
