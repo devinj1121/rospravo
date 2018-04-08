@@ -103,8 +103,7 @@ public class IndexXML implements Runnable {
             }
 
             // Financials
-            ret.addField("Total amount sought", getRubles(cdata, new String[] {"o взыскании","сумме", "размере"}));
-            // TODO fix?
+            ret.addField("Total amount sought", getRubles(cdata, new String[] {"взыскании","сумме", "размере"}));
             ret.addField("Interest", getRubles(cdata, new String[] {"процент"}));
             ret.addField("Penalties", getRubles(cdata, new String[] {"штраф", "пен", "неустойк"}));
             ret.addField("Amount Awarded", getRubles(cdata, new String[] {"взыскании штраф"}));
@@ -125,8 +124,6 @@ public class IndexXML implements Runnable {
             System.out.println("Plaintiff Reps: " + ret.getFieldValues("Plaintiff Reps"));
             System.out.println("Defendant: " + ret.getFieldValue("Defendant"));
             System.out.println("Defendant Reps: " + ret.getFieldValues("Defendant Reps"));
-            System.out.println("Third Party: " + ret.getFieldValue("Third Party"));
-            System.out.println("Third Party Reps: " + ret.getFieldValues("Third Party Reps"));
             System.out.println("Total amount sought: " + ret.getFieldValue("Total amount sought"));
             System.out.println("Interest: " + ret.getFieldValue("Interest"));
             System.out.println("Penalties: " + ret.getFieldValue("Penalties"));
@@ -158,7 +155,7 @@ public class IndexXML implements Runnable {
 
     // A method to get ruble value from a string
     private String getRubles(String string, String[] chunkIdentifiers){
-        if(file.getName().contains("305733214")){
+        if(file.getName().contains("305734796")){
             System.out.println("hello");
         }
         for(int i = 0; i < chunkIdentifiers.length; i++){
@@ -192,7 +189,6 @@ public class IndexXML implements Runnable {
                     else if(split[j].contains("руб")){
                         break;
                     }
-                    // TODO Fix the else
                     else{
                         toReturn += split[j];
                     }
@@ -213,7 +209,7 @@ public class IndexXML implements Runnable {
         for(String name : possibleNames){
             if(string.contains(name)){
                 String temp = string.substring(string.indexOf(name), string.indexOf(name) + 600);
-                if(temp.matches("признании")) {
+                if(temp.contains("признании")) {
                     parties = temp.substring(0, temp.indexOf("признании"));
                     break;
                 }
