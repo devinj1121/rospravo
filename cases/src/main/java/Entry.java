@@ -14,8 +14,6 @@ public class Entry {
     private ArrayList<String> plaintiffreps;
     private ArrayList<String> defendantreps;
     private String amountsought;
-    private String interest;
-    private String penalties;
     private String amountawarded;
 
     public String getCategory() {
@@ -120,22 +118,6 @@ public class Entry {
 
     public void setAmountsought(String amountsought) {
         this.amountsought = amountsought;
-    }
-
-    public String getInterest() {
-        return interest;
-    }
-
-    public void setInterest(String interest) {
-        this.interest = interest;
-    }
-
-    public String getPenalties() {
-        return penalties;
-    }
-
-    public void setPenalties(String penalties) {
-        this.penalties = penalties;
     }
 
     public String getAmountawarded() {

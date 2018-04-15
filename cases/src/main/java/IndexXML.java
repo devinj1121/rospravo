@@ -102,8 +102,6 @@ public class IndexXML implements Runnable {
 
             // Financials
             entry.setAmountsought(getRubles(cdata, new String[] {"взыскании","сумме", "размере"}));
-            entry.setInterest(getRubles(cdata, new String[] {"процент"}));
-            entry.setPenalties(getRubles(cdata, new String[] {"штраф", "пени", "пеней", "неустойк"}));
             entry.setAmountawarded(getRubles(cdata, new String[] {"взыскании штраф"}));
 
 
@@ -119,8 +117,6 @@ public class IndexXML implements Runnable {
             System.out.println("Defendant: " + entry.getDefendant());
             System.out.println("Defendant Reps: " + entry.getDefendantreps());
             System.out.println("Total amount sought: " + entry.getAmountsought());
-            System.out.println("Interest: " + entry.getInterest());
-            System.out.println("Penalties: " + entry.getPenalties());
             System.out.println("Amount Awarded: " + entry.getAmountawarded());
             System.out.println("Expedited Proceedings: " + entry.getExpedited());
             System.out.println(file.getName() + " in category of interest!");
@@ -227,10 +223,6 @@ public class IndexXML implements Runnable {
 
     // A method to get the parties of the court case
     private ArrayList<String> getReps(String string, String[] possibleNames){
-        // TODO
-        if(file.getName().contains("305734700")){
-            System.out.println();
-        }
         // List for storing multiples names found
         ArrayList<String> people = new ArrayList<>();
 
@@ -243,6 +235,9 @@ public class IndexXML implements Runnable {
             temp = stringCleanup(temp);
             if(temp.toLowerCase().contains("при участии")){
                 temp = temp.substring(temp.toLowerCase().indexOf("при участии"), temp.toLowerCase().indexOf("при участии") + 500);
+            }
+            if(temp.toLowerCase().contains("без вызова сторон")){
+                return people;
             }
 
             // If the cdata contains the party name try to grab the first occurrence, otherwise, go to next possible name
