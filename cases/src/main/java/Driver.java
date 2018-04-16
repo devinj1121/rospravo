@@ -1,4 +1,6 @@
 import java.io.File;
+import java.io.FileWriter;
+import java.rmi.server.ExportException;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
@@ -8,6 +10,8 @@ public class Driver {
 
     static Scanner stdin = new Scanner(System.in);
     static ExecutorService threadPool = Executors.newFixedThreadPool(12);
+    static File outputFile = new File("C:\\Users\\Devin\\Desktop\\output.csv");
+    final static String CSV_HEADER = "file,date,caseNum,result,region,court,judge,plaintiff,plaintReps,defendant,defReps,amountSought,amountAwarded,expedited";
 
     public static void main(String[] args) {
         boolean done = false;
@@ -35,6 +39,17 @@ public class Driver {
 
     public static void recurseTree(int option) {
         System.out.print("Please enter the FULL path of the root directory: ");
+        if(option == 3){
+            try{
+                FileWriter fw = new FileWriter(outputFile, true);
+                fw.append(CSV_HEADER + "\n");
+                fw.flush();
+                fw.close();
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }
+        }
         recurseTreeHelper(new File(stdin.nextLine()), option);
     }
 

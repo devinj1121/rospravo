@@ -1,12 +1,11 @@
-import org.apache.solr.common.SolrInputDocument;
-
 import java.io.File;
 
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 
+import java.io.FileDescriptor;
+import java.io.FileWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.parsers.*;
@@ -14,11 +13,12 @@ import javax.xml.parsers.*;
 // Class to index documents into Solr
 public class IndexXML implements Runnable {
 
-    private File file;
-    SolrInputDocument ret = new SolrInputDocument();
+    private File inputFile;
+    private File outputFile;
 
     public IndexXML(File file) {
-        this.file = file;
+        this.inputFile = file;
+        this.outputFile = new File("C:\\Users\\Devin\\Desktop\\output.csv");
     }
 
     public void run() {
@@ -26,7 +26,7 @@ public class IndexXML implements Runnable {
             Entry entry = new Entry();
 
             // XML Document Built
-            Document xmlDoc = buildXMLDoc(file.getAbsolutePath());
+            Document xmlDoc = buildXMLDoc(inputFile.getAbsolutePath());
             String cdata = null;
 
             // Store CData
@@ -119,8 +119,27 @@ public class IndexXML implements Runnable {
             System.out.println("Total amount sought: " + entry.getAmountsought());
             System.out.println("Amount Awarded: " + entry.getAmountawarded());
             System.out.println("Expedited Proceedings: " + entry.getExpedited());
-            System.out.println(file.getName() + " in category of interest!");
+            System.out.println(inputFile.getName() + " in category of interest!");
             System.out.println();
+
+            // CSV File
+            FileWriter fw = new FileWriter(outputFile, true);
+            fw.append(inputFile.getName() + ",");
+            fw.append(entry.getDate() + ",");
+            fw.append(entry.getCasenumber() + ",");
+            fw.append(entry.getResult() + ",");
+            fw.append(entry.getRegion() + ",");
+            fw.append(entry.getCourt()+ ",");
+            fw.append(entry.getJudge() + ",");
+            fw.append(entry.getPlaintiff() + ",");
+            fw.append(entry.getPlaintiffreps() + ",");
+            fw.append(entry.getDefendant() + ",");
+            fw.append(entry.getDefendantreps() + ",");
+            fw.append(entry.getAmountsought() + ",");
+            fw.append(entry.getAmountawarded() + ",");
+            fw.append(entry.getExpedited() + "\n");
+            fw.flush();
+            fw.close();
 
         } catch (Exception e) {
             e.printStackTrace();
