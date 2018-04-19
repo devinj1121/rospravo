@@ -124,19 +124,19 @@ public class IndexXML implements Runnable {
 
             // CSV File
             FileWriter fw = new FileWriter(outputFile, true);
-            fw.append(inputFile.getName() + ",");
-            fw.append(entry.getDate() + ",");
-            fw.append(entry.getCasenumber() + ",");
-            fw.append(entry.getResult() + ",");
-            fw.append(entry.getRegion() + ",");
-            fw.append(entry.getCourt()+ ",");
-            fw.append(entry.getJudge() + ",");
-            fw.append(entry.getPlaintiff() + ",");
-            fw.append(entry.getPlaintiffreps() + ",");
-            fw.append(entry.getDefendant() + ",");
-            fw.append(entry.getDefendantreps() + ",");
-            fw.append(entry.getAmountsought() + ",");
-            fw.append(entry.getAmountawarded() + ",");
+            fw.append(inputFile.getName() + ";");
+            fw.append(entry.getDate() + ";");
+            fw.append(entry.getCasenumber() + ";");
+            fw.append(entry.getResult() + ";");
+            fw.append(entry.getRegion() + ";");
+            fw.append(entry.getCourt()+ ";");
+            fw.append(entry.getJudge() + ";");
+            fw.append(entry.getPlaintiff() + ";");
+            fw.append(entry.getPlaintiffreps() + ";");
+            fw.append(entry.getDefendant() + ";");
+            fw.append(entry.getDefendantreps() + ";");
+            fw.append(entry.getAmountsought() + ";");
+            fw.append(entry.getAmountawarded() + ";");
             fw.append(entry.getExpedited() + "\n");
             fw.flush();
             fw.close();
@@ -164,6 +164,9 @@ public class IndexXML implements Runnable {
 
     // A method to get ruble value from a string
     private String getRubles(String string, String[] chunkIdentifiers){
+        if(inputFile.getName().contains("303702573.xml")){
+            System.out.println();
+        }
         for(int i = 0; i < chunkIdentifiers.length; i++){
             // Grab first chunk of text containing word and rubles
             String chunk = "";
@@ -186,23 +189,37 @@ public class IndexXML implements Runnable {
             }
             String[] split = chunk.split("\\s+|\\h+");
             String toReturn = "";
+            int indexrubles = -1;
+            int firstNum = -1;
+            int firstNonNum = -1;
+            // Find index with word rubles
             for(int j = 0; j < split.length; j++){
-                if(!chunkIdentifiers[i].contains(split[j])){
-                    if(split[j].contains("руб") && split[j].matches("\\d+.+")){
-                        toReturn += split[j].substring(0, split[j].indexOf("р"));
-                        break;
-                    }
-                    else if(split[j].contains("руб")){
-                        break;
-                    }
-                    else{
-                        toReturn += split[j];
-                    }
+                if(split[j].contains("руб")){
+                    indexrubles = j;
+                    break;
                 }
             }
-            // If something found, return it. If not, go on to next chunk identifier
+            // Find index with numbers
+            for(int j = indexrubles - 1; j >= 0; j--){
+                if(split[j].matches("\\d+.+") || split[j].matches(".+\\d+")){
+                    firstNum = j;
+                    break;
+                }
+            }
+            // Go back from numbers until hitting non number
+            for(int j = firstNum - 1; j >= 0; j--){
+                if(!split[j].matches("\\d+.+") && !split[j].matches(".+\\d+")){
+                    firstNonNum = j;
+                    break;
+                }
+            }
+            // Grab stuff in between non number and number
+            for(int j = firstNonNum + 1; j <= firstNum; j++){
+                toReturn += split[j].replaceAll("[^\\d]|\\.", "");
+            }
+            // If something found
             if(!toReturn.equals("")){
-                return stringCleanup(toReturn).replaceAll("[^\\d.]", "");
+                return stringCleanup(toReturn);
             }
         }
         return "";
@@ -337,3 +354,4 @@ public class IndexXML implements Runnable {
         return temp;
     }
 }
+
