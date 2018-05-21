@@ -79,15 +79,56 @@ public class IndexXML implements Runnable {
             entry.setDate(dateNodes.item(0).getTextContent().trim());
             entry.setCasenumber(caseNumNodes.item(0).getTextContent().trim());
 
+            // If judge field is empty
+            if(inputFile.getName().contains("305733207")){
+                System.out.println();
+            }
+            if(entry.getJudge() == null || entry.getJudge().equals("")){
+                String temp = "";
+                int index1 = cdata.toLowerCase().indexOf("судья");
+                int index2 = cdata.toLowerCase().indexOf("судьи");
+                if(index1 >= 0 && index2 >= 0) {
+                    temp = cdata.substring(Math.min(index1, index2), Math.min(index1, index2) + 500);
+                }
+                else if(index1 < 0 && index2 >= 0){
+                    temp = cdata.substring(index2, index2 + 500);
+                }
+                else if(index2 < 0 && index1 >= 0){
+                    temp = cdata.substring(index1, index1 + 500);
+                }
+                temp = stringCleanup(temp);
+                // Look for name with initials
+                String[] tempArr = temp.split(" ");
+                Pattern pattern1 = Pattern.compile("([А-Я]\\s*\\.\\s*[А-Я]\\s*\\.)\\s*.*");
+                for(int i = 0; i < tempArr.length; i++){
+                    Matcher matcher = pattern1.matcher(tempArr[i]);
+                    if(matcher.find()){
+                        entry.setJudge(tempArr[i-1] + " " + matcher.group(1));
+                        break;
+                    }
+                }
+            }
+
             // Expedited proceedings
             String proceedings = "";
-            if(cdata.contains("упрощенного производства") || cdata.contains("упрощенное производство")){
+            if(cdata.toLowerCase().contains("упрощенного производства") || cdata.toLowerCase().contains("упрощенное производство")){
                 proceedings = "True";
             }
             else{
                 proceedings = "False";
             }
             entry.setExpedited(proceedings);
+
+            // Breaks
+            String breaks = "";
+            if(cdata.toLowerCase().contains("объявлялся перерыв")){
+                breaks = "True";
+            }
+            else{
+                breaks = "False";
+            }
+            entry.setBreaks(breaks);
+
 
             // Reps
             entry.setPlaintiffreps(getReps(cdata, new String[] {"истца","заявителя", "истец", "заявитель"}));
@@ -119,6 +160,7 @@ public class IndexXML implements Runnable {
             System.out.println("Total amount sought: " + entry.getAmountsought());
             System.out.println("Amount Awarded: " + entry.getAmountawarded());
             System.out.println("Expedited Proceedings: " + entry.getExpedited());
+            System.out.println("Breaks: " + entry.getBreaks());
             System.out.println(inputFile.getName() + " in category of interest!");
             System.out.println();
 
@@ -137,6 +179,7 @@ public class IndexXML implements Runnable {
             fw.append(entry.getDefendantreps() + ";");
             fw.append(entry.getAmountsought() + ";");
             fw.append(entry.getAmountawarded() + ";");
+            fw.append(entry.getBreaks() + ";");
             fw.append(entry.getExpedited() + "\n");
             fw.flush();
             fw.close();
@@ -164,9 +207,6 @@ public class IndexXML implements Runnable {
 
     // A method to get ruble value from a string
     private String getRubles(String string, String[] chunkIdentifiers){
-        if(inputFile.getName().contains("303702573.xml")){
-            System.out.println();
-        }
         for(int i = 0; i < chunkIdentifiers.length; i++){
             // Grab first chunk of text containing word and rubles
             String chunk = "";
@@ -206,16 +246,23 @@ public class IndexXML implements Runnable {
                     break;
                 }
             }
-            // Go back from numbers until hitting non number
-            for(int j = firstNum - 1; j >= 0; j--){
-                if(!split[j].matches("\\d+.+") && !split[j].matches(".+\\d+")){
-                    firstNonNum = j;
-                    break;
-                }
+            // If no numbers found before rubles, numbers must be in same chunk as rubles
+            if(firstNum == -1 && indexrubles != -1){
+                String[] rubleSplit = split[indexrubles].split("руб");
+                toReturn += rubleSplit[0].replaceAll("[^\\d]|\\.", "");
             }
-            // Grab stuff in between non number and number
-            for(int j = firstNonNum + 1; j <= firstNum; j++){
-                toReturn += split[j].replaceAll("[^\\d]|\\.", "");
+            // Go back from numbers until hitting non number
+            else{
+                for(int j = firstNum - 1; j >= 0; j--){
+                    if(!split[j].matches("\\d+.+") && !split[j].matches(".+\\d+") && !split[j].matches("\\d")){
+                        firstNonNum = j;
+                        break;
+                    }
+                }
+                // Grab stuff in between non number and number
+                for(int j = firstNonNum + 1; j <= firstNum; j++){
+                    toReturn += split[j].replaceAll("[^\\d]|\\.", "");
+                }
             }
             // If something found
             if(!toReturn.equals("")){

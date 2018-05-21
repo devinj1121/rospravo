@@ -15,9 +15,18 @@ public class Entry {
     private ArrayList<String> defendantreps;
     private String amountsought;
     private String amountawarded;
+    private String breaks;
 
     public String getCategory() {
         return category;
+    }
+
+    public void setBreaks(String breaks){
+        this.breaks = breaks;
+    }
+
+    public String getBreaks(){
+        return breaks;
     }
 
     public void setCategory(String category) {
