@@ -42,7 +42,6 @@ public class IndexXML implements Runnable {
             category = categoryNodes.item(0).getTextContent().trim();
 
             // Determine if of interest
-            // TODO excluding bankruptcy?
             switch(category) {
                 case "о взыскании задолженности":
                     entry.setCategory("О взыскании задолженности");
@@ -327,7 +326,7 @@ public class IndexXML implements Runnable {
             if (temp.toLowerCase().contains(party)){
 
                 // Make sure to cut before another party is mentioned
-                temp = string.substring(string.toLowerCase().indexOf(party) + party.length(), string.toLowerCase().indexOf(party) + 500);
+                temp = string.substring(string.toLowerCase().indexOf(party) + party.length(), string.toLowerCase().indexOf(party) + 500); //TODO array index
                 temp = stringCleanup(temp);
                 temp = removeOthers(temp);
 
