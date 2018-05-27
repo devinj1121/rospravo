@@ -22,15 +22,8 @@ public class NormalizeXML implements Runnable{
         catch(IOException ex){
             ex.printStackTrace();
         }
-
         // Normalize
-        boolean doIt = true;
-        for(String line : lines){
-            if(line.contains("<root>")){
-                doIt = false;
-            }
-        }
-        if(doIt){
+        if(!lines.get(0).contains("<root>")){
             try (PrintStream out = new PrintStream(file)) {
                 char current;
                 out.println("<root>");
@@ -48,6 +41,9 @@ public class NormalizeXML implements Runnable{
                         }
                     }
                     out.println();
+                }
+                if(!lines.get(lines.size() - 1).contains("]]></body>")){
+                    out.println("]]></body>");
                 }
                 out.println("</root>");
                 out.close();

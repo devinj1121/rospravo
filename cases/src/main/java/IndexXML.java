@@ -79,23 +79,21 @@ public class IndexXML implements Runnable {
             entry.setCasenumber(caseNumNodes.item(0).getTextContent().trim());
 
             // If judge field is empty
-            if(inputFile.getName().contains("305733207")){
-                System.out.println();
-            }
             if(entry.getJudge() == null || entry.getJudge().equals("")){
                 String temp = "";
                 int index1 = cdata.toLowerCase().indexOf("судья");
                 int index2 = cdata.toLowerCase().indexOf("судьи");
                 if(index1 >= 0 && index2 >= 0) {
-                    temp = cdata.substring(Math.min(index1, index2), Math.min(index1, index2) + 500);
+                    temp = cdata.substring(Math.min(index1, index2));
                 }
                 else if(index1 < 0 && index2 >= 0){
-                    temp = cdata.substring(index2, index2 + 500);
+                    temp = cdata.substring(index2);
                 }
                 else if(index2 < 0 && index1 >= 0){
-                    temp = cdata.substring(index1, index1 + 500);
+                    temp = cdata.substring(index1);
                 }
                 temp = stringCleanup(temp);
+
                 // Look for name with initials
                 String[] tempArr = temp.split(" ");
                 Pattern pattern1 = Pattern.compile("([А-Я]\\s*\\.\\s*[А-Я]\\s*\\.)\\s*.*");
@@ -277,18 +275,18 @@ public class IndexXML implements Runnable {
         string = string.toLowerCase();
         for(String name : possibleNames){
             if(string.contains(name)){
-                String temp = string.substring(string.indexOf(name), string.indexOf(name) + 600);
-                if(temp.contains("взыскании")){
-                    parties = temp.substring(0, temp.indexOf("взыскании"));
+               string = string.substring(string.indexOf(name));
+                if(string.contains("взыскании")){
+                    parties = string.substring(0, string.indexOf("взыскании"));
                     break;
                 }
-                else if(temp.contains("признании")){
-                    parties = temp.substring(0, temp.indexOf("признании"));
+                else if(string.contains("признании")){
+                    parties = string.substring(0, string.indexOf("признании"));
                     break;
                 }
 
                 else{
-                    parties = temp;
+                    parties = string;
                     break;
                 }
             }
@@ -326,7 +324,7 @@ public class IndexXML implements Runnable {
             if (temp.toLowerCase().contains(party)){
 
                 // Make sure to cut before another party is mentioned
-                temp = temp.substring(temp.toLowerCase().indexOf(party) + party.length(), temp.toLowerCase().indexOf(party) + 500); //TODO array index
+                temp = temp.substring(temp.toLowerCase().indexOf(party) + party.length());
                 temp = stringCleanup(temp);
                 temp = removeOthers(temp);
 
@@ -375,10 +373,12 @@ public class IndexXML implements Runnable {
         temp = temp.replaceAll("[\\s\\xA0]+", " ");
         // Check for ending "o"
         String[] tempSplit = temp.split("[\\s\\xA0]");
-        if(tempSplit[tempSplit.length -1].equals("о")){
-            temp = "";
-            for(int i = 0; i < tempSplit.length - 1; i++){
-                temp += tempSplit[i] + " ";
+        if(tempSplit.length != 0){
+            if(tempSplit[tempSplit.length -1].equals("о")){
+                temp = "";
+                for(int i = 0; i < tempSplit.length - 1; i++){
+                    temp += tempSplit[i] + " ";
+                }
             }
         }
         // Cutoff ustanovil
