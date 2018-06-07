@@ -42,9 +42,6 @@ public class NormalizeXML implements Runnable{
                     }
                     out.println();
                 }
-                if(!lines.get(lines.size() - 1).contains("]]></body>")){
-                    out.println("]]></body>");
-                }
                 out.println("</root>");
                 out.close();
             }

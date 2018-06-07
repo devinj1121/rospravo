@@ -18,7 +18,7 @@ public class IndexXML implements Runnable {
 
     public IndexXML(File file) {
         this.inputFile = file;
-        this.outputFile = new File("C:\\Users\\Devin\\Desktop\\output.csv");
+        this.outputFile = new File("C:\\Users\\useradmin\\Desktop\\output.csv");
     }
 
     public void run() {
@@ -368,9 +368,11 @@ public class IndexXML implements Runnable {
         temp = temp.replaceAll("&nbsp;", "");
         temp = temp.replaceAll("–", "");
         temp = temp.replaceAll("-", "");
+        temp = temp.replaceAll(";", "");
         temp = temp.replaceAll("_", "");
         temp = temp.replaceAll("<[^>]+>|</[^>]+>|/[^>]+>|<. style[^>]+>|<.+", "");
         temp = temp.replaceAll("[\\s\\xA0]+", " ");
+        temp = temp.replaceAll("&quot", " ");
         // Check for ending "o"
         String[] tempSplit = temp.split("[\\s\\xA0]");
         if(tempSplit.length != 0){
