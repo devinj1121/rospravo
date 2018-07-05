@@ -10,7 +10,7 @@ public class Driver {
 
     static Scanner stdin = new Scanner(System.in);
     static ExecutorService threadPool = Executors.newFixedThreadPool(1);
-    static File outputFile = new File("C:\\Users\\useradmin\\Desktop\\output.csv");
+    static File outputFile = new File("C:\\Users\\Devin\\Desktop\\output.csv");
     final static String CSV_HEADER = "file;date;caseNum;result;region;court;judge;plaintiff;plaintReps;defendant;defReps;amountSought;amountAwarded;expedited;breaks";
 
     public static void main(String[] args) {

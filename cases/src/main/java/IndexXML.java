@@ -18,7 +18,7 @@ public class IndexXML implements Runnable {
 
     public IndexXML(File file) {
         this.inputFile = file;
-        this.outputFile = new File("C:\\Users\\useradmin\\Desktop\\output.csv");
+        this.outputFile = new File("C:\\Users\\Devin\\Desktop\\output.csv");
     }
 
     public void run() {
@@ -76,9 +76,13 @@ public class IndexXML implements Runnable {
             entry.setRegion(regionNodes.item(0).getTextContent().trim());
             entry.setJudge(judgeNodes.item(0).getTextContent().trim());
             entry.setDate(dateNodes.item(0).getTextContent().trim());
-            entry.setCasenumber(caseNumNodes.item(0).getTextContent().trim());
 
-            // If judge field is empty
+            // Sometimes case number not included
+            if(caseNumNodes.getLength() != 0){
+                entry.setCasenumber(caseNumNodes.item(0).getTextContent().trim());
+            }
+
+            // If judge field is not inluded
             if(entry.getJudge() == null || entry.getJudge().equals("")){
                 String temp = "";
                 int index1 = cdata.toLowerCase().indexOf("судья");
@@ -107,24 +111,21 @@ public class IndexXML implements Runnable {
             }
 
             // Expedited proceedings
-            String proceedings = "";
             if(cdata.toLowerCase().contains("упрощенного производства") || cdata.toLowerCase().contains("упрощенное производство")){
-                proceedings = "True";
+                entry.setExpedited("True");
             }
             else{
-                proceedings = "False";
+                entry.setExpedited("False");
             }
-            entry.setExpedited(proceedings);
 
             // Breaks
-            String breaks = "";
             if(cdata.toLowerCase().contains("объявлялся перерыв")){
-                breaks = "True";
+                entry.setBreaks("True");
             }
             else{
-                breaks = "False";
+                entry.setBreaks("False");
             }
-            entry.setBreaks(breaks);
+
 
 
             // Reps
@@ -158,7 +159,6 @@ public class IndexXML implements Runnable {
             System.out.println("Amount Awarded: " + entry.getAmountawarded());
             System.out.println("Expedited Proceedings: " + entry.getExpedited());
             System.out.println("Breaks: " + entry.getBreaks());
-            System.out.println(inputFile.getName() + " in category of interest!");
             System.out.println();
 
             // CSV File
@@ -203,11 +203,14 @@ public class IndexXML implements Runnable {
     }
 
     // A method to get ruble value from a string
-    private String getRubles(String string, String[] chunkIdentifiers){
-        for(int i = 0; i < chunkIdentifiers.length; i++){
-            // Grab first chunk of text containing word and rubles
+    private String getRubles(String string, String[] keywords){
+        if(inputFile.getName().contains("302358476.xml")){
+            System.out.println();
+        }
+        // Grab first chunk of text containing keyword and rubles
+        for(int i = 0; i < keywords.length; i++){
             String chunk = "";
-            int currOcc = string.toLowerCase().indexOf(chunkIdentifiers[i]);
+            int currOcc = string.toLowerCase().indexOf(keywords[i]);
             while(true){
                 if(currOcc >= 0) {
                     // If found stop
@@ -217,18 +220,20 @@ public class IndexXML implements Runnable {
                     }
                     // If not, keep going
                     else{
-                        currOcc = string.toLowerCase().indexOf(chunkIdentifiers[i], currOcc + chunkIdentifiers[i].length());
+                        currOcc = string.toLowerCase().indexOf(keywords[i], currOcc + keywords[i].length());
                     }
                 }
                 else{
                     break;
                 }
             }
+            // Start searching in that chunk
             String[] split = chunk.split("\\s+|\\h+");
             String toReturn = "";
             int indexrubles = -1;
             int firstNum = -1;
             int firstNonNum = -1;
+
             // Find index with word rubles
             for(int j = 0; j < split.length; j++){
                 if(split[j].contains("руб")){
@@ -236,19 +241,21 @@ public class IndexXML implements Runnable {
                     break;
                 }
             }
-            // Find index with numbers
+
+            // Find index with numbers going backward from rubles
             for(int j = indexrubles - 1; j >= 0; j--){
                 if(split[j].matches("\\d+.+") || split[j].matches(".+\\d+")){
                     firstNum = j;
                     break;
                 }
             }
+
             // If no numbers found before rubles, numbers must be in same chunk as rubles
             if(firstNum == -1 && indexrubles != -1){
                 String[] rubleSplit = split[indexrubles].split("руб");
-                toReturn += rubleSplit[0].replaceAll("[^\\d]|\\.", "");
+                toReturn += rubleSplit[0].replaceAll("[^\\d,]|\\.", "").replaceAll(",", ".");
             }
-            // Go back from numbers until hitting non number
+            // Otherwise go on to find index where the first non number occurs
             else{
                 for(int j = firstNum - 1; j >= 0; j--){
                     if(!split[j].matches("\\d+.+") && !split[j].matches(".+\\d+") && !split[j].matches("\\d")){
@@ -256,14 +263,18 @@ public class IndexXML implements Runnable {
                         break;
                     }
                 }
-                // Grab stuff in between non number and number
+                // Grab stuff in between non number and number and if ruble index contains numbers, add that to end
                 for(int j = firstNonNum + 1; j <= firstNum; j++){
-                    toReturn += split[j].replaceAll("[^\\d]|\\.", "");
+                    toReturn += split[j].replaceAll("[^\\d,]|\\.", "").replaceAll(",", ".");
+                }
+                if(indexrubles != -1 && split[indexrubles].matches(".*\\d+.*")){
+                    String[] rubleSplit = split[indexrubles].split("руб");
+                    toReturn += rubleSplit[0].replaceAll("[^\\d]|\\.", "").replaceAll(",", ".");
                 }
             }
             // If something found
             if(!toReturn.equals("")){
-                return stringCleanup(toReturn);
+                return toReturn;
             }
         }
         return "";
@@ -391,7 +402,7 @@ public class IndexXML implements Runnable {
         return temp;
     }
 
-    // Remove other names
+    // Remove other names for parties
     private String removeOthers(String temp){
         if(temp.toLowerCase().contains("ответчик")) temp = temp.substring(0, temp.toLowerCase().indexOf("ответчик"));
         if(temp.toLowerCase().contains("истец")) temp = temp.substring(0, temp.toLowerCase().indexOf("истец"));
