@@ -1,7 +1,7 @@
 # russian-law
 
 ## About
-This project investigates Russian judicial behavior through the use of text mining on a large database of Russian judicial decision texts. This is a work in progress.
+This project investigates Russian judicial behavior through the use of text mining on a large database of Russian judicial decision texts and Russian newspapers. This is a work in progress.
 
 ## Authors
 
