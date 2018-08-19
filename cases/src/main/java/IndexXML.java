@@ -41,6 +41,7 @@ public class IndexXML implements Runnable {
             String category = "";
             category = categoryNodes.item(0).getTextContent().trim();
 
+
             // Determine if of interest
             switch(category) {
                 case "о взыскании задолженности":
@@ -126,8 +127,6 @@ public class IndexXML implements Runnable {
                 entry.setBreaks("False");
             }
 
-
-
             // Reps
             entry.setPlaintiffreps(getReps(cdata, new String[] {"истца","заявителя", "истец", "заявитель"}));
             entry.setDefendantreps(getReps(cdata, new String[] {"ответчика", "ответчик"}));
@@ -193,7 +192,6 @@ public class IndexXML implements Runnable {
             factory.setIgnoringComments(true);
             factory.setIgnoringElementContentWhitespace(true);
             factory.setValidating(false);
-
             DocumentBuilder builder = factory.newDocumentBuilder();
             return builder.parse(new InputSource(docString));
         } catch (Exception e) {
