@@ -1,6 +1,5 @@
 import java.io.File;
 import java.io.FileWriter;
-import java.rmi.server.ExportException;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
@@ -10,67 +9,59 @@ public class Driver {
 
     static Scanner stdin = new Scanner(System.in);
     static ExecutorService threadPool = Executors.newFixedThreadPool(1);
-    static File outputFile = new File("C:\\Users\\Devin\\Desktop\\output.csv");
+    static File outputFile = new File(System.getProperty("user.home") + "/Desktop/output.csv");
     final static String CSV_HEADER = "file;date;caseNum;result;region;court;judge;plaintiff;plaintReps;defendant;defReps;amountSought;amountAwarded;expedited;breaks";
 
     public static void main(String[] args) {
         boolean done = false;
-        System.out.println("Please select an (integer) option:\n\t1: Unzip\n\t2: Normalize\n\t3: Index");
+        System.out.println("Please select an (integer) option:\n\t1: Normalize XML Files\n\t2: Create CSV");
         do {
             try {
+                // Make sure valid input
                 int option = stdin.nextInt();
-                if(option < 1 || option > 3){
+                if(option < 1 || option > 2){
                     throw new InputMismatchException();
                 }
-                else{
-                    stdin.nextLine();
-                    done = true;
-                    recurseTree(option);
+                // Clear the scanner and signal that input loop is done, if option 2 make a CSV
+                stdin.nextLine();
+                done = true;
+                if(option == 2){
+                    try{
+                        FileWriter fw = new FileWriter(outputFile, false);
+                        fw.append(CSV_HEADER + "\n");
+                        fw.flush();
+                        fw.close();
+                    }
+                    catch (Exception e){
+                        e.printStackTrace();
+                    }
                 }
+                // Start recursion of file tree
+                System.out.print("Please enter the FULL path of the root directory: ");
+                recurseTree(new File(stdin.nextLine()), option);
             }
             catch (InputMismatchException e) {
-                System.out.print("Enter an integer 1-3: ");
-                stdin.nextLine(); // Clear the scanner
+                System.out.print("Enter an integer 1-2: ");
+                stdin.nextLine();
             }
         }
-        while (!done);
+        while(!done);
         threadPool.shutdown();
     }
 
-    public static void recurseTree(int option) {
-        System.out.print("Please enter the FULL path of the root directory: ");
-        if(option == 3){
-            try{
-                FileWriter fw = new FileWriter(outputFile, true);
-                fw.append(CSV_HEADER + "\n");
-                fw.flush();
-                fw.close();
+    public static void recurseTree(File root, int option) {
+            if(root.listFiles() != null){
+                for(File child : root.listFiles()){
+                    recurseTree(child, option);
+                }
             }
-            catch(Exception e){
-                e.printStackTrace();
-            }
-        }
-        recurseTreeHelper(new File(stdin.nextLine()), option);
-    }
-
-    private static void recurseTreeHelper(File root, int option) {
-        File[] directoryListing = root.listFiles();
-        if (directoryListing != null) {
-            for (File child : directoryListing) {
-                recurseTreeHelper(child, option);
-            }
-        } else {
             switch(option) {
                 case 1:
-                    threadPool.submit(new UnzipXML(root));
-                    break;
-                case 2:
                     threadPool.submit(new NormalizeXML(root));
                     break;
-                case 3:
+                case 2:
                     threadPool.submit(new IndexXML(root));
                     break;
             }
         }
-    }
 }
