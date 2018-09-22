@@ -8,7 +8,7 @@ Acts as main file for whole project.
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-import news_support
+import news_scrape
 import os
 
 # Email information
@@ -32,7 +32,7 @@ except smtplib.SMTPAuthenticationError as e:
 # Scrape
 body = ""
 print("Working...")
-body += news_support.filter_scrape()
+body += news_scrape.filter_scrape()
 
 # If the body is empty, don't send the email
 if not body:
