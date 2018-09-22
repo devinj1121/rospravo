@@ -32,7 +32,7 @@ except smtplib.SMTPAuthenticationError as e:
 # Scrape
 body = ""
 print("Working...")
-body += news_scrape.filter_scrape()
+body += news_scrape.scrape()
 
 # If the body is empty, don't send the email
 if not body:
