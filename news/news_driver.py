@@ -1,5 +1,5 @@
 '''
-Script that provides uses adv.scrape and pravo_scrape to scrape information from both news websites.
+Script that uses adv.scrape and pravo_scrape to scrape information from both news websites.
 Acts as main file for whole project.
 '''
 # Author: Devin Johnson, University of Wisconsin - Madison, djohnson58@wisc.edu
@@ -29,17 +29,10 @@ except smtplib.SMTPAuthenticationError as e:
     print("Error in authenticating email information, please try again: " + str(e))
     quit()
 
-# Select which kind of scrape to use
+# Scrape
 body = ""
-keywords = ['эксперт', 'юрист', 'адвокат', 'интервью', 'мнение', 'долж', 'рассказыв', 'эксперимен', 'опрос',
-            'треть', 'четверть', 'половина', 'думает', 'думают', 'считает', 'считают', 'бизнес']
-choice = 2
-
 print("Working...")
-if choice == 1:
-    body += news_support.keyword_scrape(keywords)
-elif choice == 2:
-    body += news_support.filter_scrape()
+body += news_support.filter_scrape()
 
 # If the body is empty, don't send the email
 if not body:

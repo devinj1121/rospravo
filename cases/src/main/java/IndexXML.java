@@ -20,34 +20,29 @@ public class IndexXML implements Runnable {
 
     public void run() {
         try {
+            // Make an entry
             Entry entry = new Entry();
 
-            // XML Document Built
+            // Build XML Doc
             Document xmlDoc = buildXMLDoc(inputFile.getAbsolutePath());
             String cdata = null;
-
-            // Store CData
             NodeList bodyNodes = xmlDoc.getElementsByTagName("body");
             for (int i = 0; i < bodyNodes.getLength(); i++) {
                 Element e = (Element) bodyNodes.item(i);
                 cdata = e.getTextContent().trim();
             }
 
-            // Category
-            String category = "";
-            String vid = "";
-            NodeList categoryNodes = xmlDoc.getElementsByTagName("category");
-            NodeList vidNodes = xmlDoc.getElementsByTagName("vid_dokumenta");
-            if(categoryNodes.getLength() != 0){
-                category = categoryNodes.item(0).getTextContent().trim();
+            // Get category and vid_dokumenta
+            if(xmlDoc.getElementsByTagName("category").getLength() != 0){
+                entry.setCategory(xmlDoc.getElementsByTagName("category").item(0).getTextContent().trim());
             }
-            if(vidNodes.getLength() != 0){
-                vid = vidNodes.item(0).getTextContent().trim().toLowerCase();
+            if(xmlDoc.getElementsByTagName("vid_dokumenta").getLength() != 0){
+                entry.setVid(xmlDoc.getElementsByTagName("vid_dokumenta").item(0).getTextContent().trim().toLowerCase());
             }
 
-            // Determine if of interest
-            if(!vid.contains("определение")){
-                switch(category) {
+            // Determine if document is of interest (Exclude определения, банкрот, try to get взыскание задолженности)
+            if(!entry.getVid().contains("определение")){
+                switch(entry.getCategory()) {
                     case "о взыскании задолженности":
                         entry.setCategory("О взыскании задолженности");
                         break;
@@ -55,7 +50,6 @@ public class IndexXML implements Runnable {
                     case "о взыскании обязательных платежей":
                         entry.setCategory("О взыскании обязательных платежей");
                         break;
-
                     case "":
                         if(cdata != null){
                             if (cdata.toLowerCase().contains("о взыскании задолженности") && !cdata.toLowerCase().contains("банкрот")) {
@@ -75,67 +69,17 @@ public class IndexXML implements Runnable {
                 return;
             }
 
-
             // Region, case number, judge, date, court, result
-            NodeList regionNodes = xmlDoc.getElementsByTagName("region");
-            NodeList caseNumNodes = xmlDoc.getElementsByTagName("CaseNumber");
-            NodeList judgeNodes = xmlDoc.getElementsByTagName("judge");
-            NodeList dateNodes = xmlDoc.getElementsByTagName("date");
-            NodeList courtNodes = xmlDoc.getElementsByTagName("court");
-            NodeList resultNodes = xmlDoc.getElementsByTagName("result");
-            entry.setResult(resultNodes.item(0).getTextContent().trim());
-            entry.setCourt(courtNodes.item(0).getTextContent().trim());
-            entry.setRegion(regionNodes.item(0).getTextContent().trim());
-            entry.setJudge(judgeNodes.item(0).getTextContent().trim());
-            entry.setDate(dateNodes.item(0).getTextContent().trim());
-
-            // Sometimes case number not included
-            if(caseNumNodes.getLength() != 0){
-                entry.setCasenumber(caseNumNodes.item(0).getTextContent().trim());
+            entry.setResult(xmlDoc.getElementsByTagName("result").item(0).getTextContent().trim());
+            entry.setCourt(xmlDoc.getElementsByTagName("court").item(0).getTextContent().trim());
+            entry.setRegion(xmlDoc.getElementsByTagName("region").item(0).getTextContent().trim());
+            entry.setJudge(xmlDoc.getElementsByTagName("judge").item(0).getTextContent().trim());
+            entry.setDate(xmlDoc.getElementsByTagName("date").item(0).getTextContent().trim());
+            if(xmlDoc.getElementsByTagName("CaseNumber").getLength() != 0){
+                entry.setCasenumber(xmlDoc.getElementsByTagName("CaseNumber").item(0).getTextContent().trim());
             }
-
-            // If judge field is not inluded
             if(entry.getJudge() == null || entry.getJudge().equals("")){
-                String temp = "";
-                int index1 = cdata.toLowerCase().indexOf("судья");
-                int index2 = cdata.toLowerCase().indexOf("судьи");
-                if(index1 >= 0 && index2 >= 0) {
-                    temp = cdata.substring(Math.min(index1, index2));
-                }
-                else if(index1 < 0 && index2 >= 0){
-                    temp = cdata.substring(index2);
-                }
-                else if(index2 < 0 && index1 >= 0){
-                    temp = cdata.substring(index1);
-                }
-                temp = stringCleanup(temp);
-
-                // Look for name with initials
-                String[] tempArr = temp.split(" ");
-                Pattern pattern1 = Pattern.compile("([А-Я]\\s*\\.\\s*[А-Я]\\s*\\.)\\s*.*");
-                for(int i = 0; i < tempArr.length; i++){
-                    Matcher matcher = pattern1.matcher(tempArr[i]);
-                    if(matcher.find()){
-                        entry.setJudge(tempArr[i-1] + " " + matcher.group(1));
-                        break;
-                    }
-                }
-            }
-
-            // Expedited proceedings
-            if(cdata.toLowerCase().contains("упрощенного производства") || cdata.toLowerCase().contains("упрощенное производство")){
-                entry.setExpedited("True");
-            }
-            else{
-                entry.setExpedited("False");
-            }
-
-            // Breaks
-            if(cdata.toLowerCase().contains("объявлялся перерыв")){
-                entry.setBreaks("True");
-            }
-            else{
-                entry.setBreaks("False");
+                entry.setJudge(getJudge(cdata));
             }
 
             // Reps
@@ -149,48 +93,21 @@ public class IndexXML implements Runnable {
                 entry.setDefendant(stringCleanup(parties[1]));
             }
 
-            // Financials
+            // Financial
             entry.setAmountsought(getRubles(cdata, new String[] {"взыскании","сумме", "размере"}));
             entry.setAmountawarded(getRubles(cdata, new String[] {"взыскании штраф"}));
 
+            // Expedited proceedings
+            if(cdata.toLowerCase().contains("упрощенного производства") || cdata.toLowerCase().contains("упрощенное производство")){
+                entry.setExpedited("True");
+            } else{entry.setExpedited("False");}
 
-            // Printout
-            System.out.println("Date: " + entry.getDate());
-            System.out.println("Case Number: " + entry.getCasenumber());
-            System.out.println("Result: " +entry.getResult());
-            System.out.println("Region: " + entry.getRegion());
-            System.out.println("Court: " + entry.getCourt());
-            System.out.println("Judge: " + entry.getJudge());
-            System.out.println("Plaintiff: " + entry.getPlaintiff());
-            System.out.println("Plaintiff Reps: " + entry.getPlaintiffreps());
-            System.out.println("Defendant: " + entry.getDefendant());
-            System.out.println("Defendant Reps: " + entry.getDefendantreps());
-            System.out.println("Total amount sought: " + entry.getAmountsought());
-            System.out.println("Amount Awarded: " + entry.getAmountawarded());
-            System.out.println("Expedited Proceedings: " + entry.getExpedited());
-            System.out.println("Breaks: " + entry.getBreaks());
-            System.out.println("File: " + inputFile.getName());
-            System.out.println();
+            // Breaks
+            if(cdata.toLowerCase().contains("объявлялся перерыв")){entry.setBreaks("True");}
+            else{entry.setBreaks("False");}
 
-            // CSV File
-            FileWriter fw = new FileWriter(outputFile, true);
-            fw.append(inputFile.getName() + ";");
-            fw.append(entry.getDate() + ";");
-            fw.append(entry.getCasenumber() + ";");
-            fw.append(entry.getResult() + ";");
-            fw.append(entry.getRegion() + ";");
-            fw.append(entry.getCourt()+ ";");
-            fw.append(entry.getJudge() + ";");
-            fw.append(entry.getPlaintiff() + ";");
-            fw.append(entry.getPlaintiffreps() + ";");
-            fw.append(entry.getDefendant() + ";");
-            fw.append(entry.getDefendantreps() + ";");
-            fw.append(entry.getAmountsought() + ";");
-            fw.append(entry.getAmountawarded() + ";");
-            fw.append(entry.getBreaks() + ";");
-            fw.append(entry.getExpedited() + "\n");
-            fw.flush();
-            fw.close();
+            // Output to CSV
+            writeCSV(entry);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -210,6 +127,34 @@ public class IndexXML implements Runnable {
             e.printStackTrace();
         }
         return null;
+    }
+
+    // Get a judge if not found in nodes
+    private String getJudge(String cdata){
+        String temp = "";
+        int index1 = cdata.toLowerCase().indexOf("судья");
+        int index2 = cdata.toLowerCase().indexOf("судьи");
+        if(index1 >= 0 && index2 >= 0) {
+            temp = cdata.substring(Math.min(index1, index2));
+        }
+        else if(index1 < 0 && index2 >= 0){
+            temp = cdata.substring(index2);
+        }
+        else if(index2 < 0 && index1 >= 0){
+            temp = cdata.substring(index1);
+        }
+        temp = stringCleanup(temp);
+
+        // Look for name with initials
+        String[] tempArr = temp.split(" ");
+        Pattern pattern1 = Pattern.compile("([А-Я]\\s*\\.\\s*[А-Я]\\s*\\.)\\s*.*");
+        for(int i = 0; i < tempArr.length; i++){
+            Matcher matcher = pattern1.matcher(tempArr[i]);
+            if(matcher.find()){
+                return(tempArr[i-1] + " " + matcher.group(1));
+            }
+        }
+        return "";
     }
 
     // A method to get ruble value from a string
@@ -248,7 +193,6 @@ public class IndexXML implements Runnable {
                     break;
                 }
             }
-
             // Find index with numbers going backward from rubles
             for(int j = indexrubles - 1; j >= 0; j--){
                 if(split[j].matches("\\d+.+") || split[j].matches(".+\\d+")){
@@ -256,7 +200,6 @@ public class IndexXML implements Runnable {
                     break;
                 }
             }
-
             // If no numbers found before rubles, numbers must be in same chunk as rubles
             if(firstNum == -1 && indexrubles != -1){
                 String[] rubleSplit = split[indexrubles].split("руб");
@@ -270,7 +213,7 @@ public class IndexXML implements Runnable {
                         break;
                     }
                 }
-                // Grab stuff in between non number and number and if ruble index contains numbers, add that to end
+                // Grab things in between non number and number and if ruble index contains numbers, add that to end
                 for(int j = firstNonNum + 1; j <= firstNum; j++){
                     toReturn += split[j].replaceAll("[^\\d,]|\\.", "").replaceAll(",", ".");
                 }
@@ -287,13 +230,13 @@ public class IndexXML implements Runnable {
         return "";
     }
 
-    private String[] getParties(String string, String[] possibleNames){
+    private String[] getParties(String string, String[] keywords){
         // Search with all names, stop once found
         String parties = "";
         string = string.toLowerCase();
-        for(String name : possibleNames){
-            if(string.contains(name)){
-               string = string.substring(string.indexOf(name));
+        for(String keyword : keywords){
+            if(string.contains(keyword)){
+               string = string.substring(string.indexOf(keyword));
                 if(string.contains("взыскании")){
                     parties = string.substring(0, string.indexOf("взыскании"));
                     break;
@@ -308,7 +251,7 @@ public class IndexXML implements Runnable {
                 }
             }
         }
-        // Split the string before "k" and after "k"
+        // Split the string into two strings: one before "k" (for the plaintiff) and one after "k" (for the defendant)
         String[] split = null;
         Pattern pattern2 = Pattern.compile("[\\s\\xA0]к[\\s\\xA0]|>к<|<к[\\s\\xA0]|[\\s\\xA0]sк>|>к[\\s\\xA0]|[\\s\\xA0]к<");
         Matcher matcher2 = pattern2.matcher(parties);
@@ -328,7 +271,7 @@ public class IndexXML implements Runnable {
 
             // Create target area and clean up
             String temp = string;
-            String party = possibleNames[x];
+            String rep = possibleNames[x];
             temp = stringCleanup(temp);
             if(temp.toLowerCase().contains("при участии")){
                 temp = temp.substring(temp.toLowerCase().indexOf("при участии"), temp.toLowerCase().indexOf("при участии") + 1000);
@@ -341,11 +284,11 @@ public class IndexXML implements Runnable {
                 return people;
             }
 
-            // If the cdata contains the party name try to grab the first occurrence, otherwise, go to next possible name
-            if (temp.toLowerCase().contains(party)){
+            // If the cdata contains the rep name try to grab the first occurrence, otherwise, go to next possible name
+            if (temp.toLowerCase().contains(rep)){
 
-                // Make sure to cut before another party is mentioned
-                temp = temp.substring(temp.toLowerCase().indexOf(party) + party.length());
+                // Make sure to cut before another rep is mentioned
+                temp = temp.substring(temp.toLowerCase().indexOf(rep) + rep.length());
                 temp = stringCleanup(temp);
                 temp = removeOthers(temp);
 
@@ -353,7 +296,7 @@ public class IndexXML implements Runnable {
                 String[] lines = temp.split("\\r?\\n");
                 for(String line:lines){
 
-                    // Look for initials signifying a party, add each one
+                    // Look for initials signifying a rep, add each one
                     String[] tempArr = line.split(" ");
                     Pattern pattern1 = Pattern.compile("([А-Я]\\s*\\.\\s*[А-Я]\\s*\\.)\\s*.*"); // Check for initials at current position
                     Pattern pattern2 = Pattern.compile("[А-Я].*"); // Check that word before or after initials begins with capital letter (hopefully a name)
@@ -420,15 +363,6 @@ public class IndexXML implements Runnable {
         return temp;
     }
 
-    private String removeUstanovil(String temp){
-        // Cutoff ustanovil
-        if(temp.contains("у  с  т  а  н  о  в  и  л :")) temp = temp.substring(0, temp.indexOf("у  с  т  а  н  о  в  и  л :"));
-        if(temp.contains("у  с  т  а  н  о  в  и  л  :")) temp = temp.substring(0, temp.indexOf("у  с  т  а  н  о  в  и  л  :"));
-        if(temp.contains("У  С  Т  А  Н  О  В  И  Л :")) temp = temp.substring(0, temp.indexOf("У  С  Т  А  Н  О  В  И  Л :"));
-        if(temp.contains("У С Т А Н О В И Л:")) temp = temp.substring(0, temp.indexOf("У С Т А Н О В И Л:"));
-        temp = temp.trim();
-        return temp;
-    }
     // Remove other names for parties
     private String removeOthers(String temp){
         if(temp.toLowerCase().contains("ответчик")) temp = temp.substring(0, temp.toLowerCase().indexOf("ответчик"));
@@ -438,6 +372,55 @@ public class IndexXML implements Runnable {
         if(temp.toLowerCase().contains("от 3-его")) temp = temp.substring(0, temp.toLowerCase().indexOf("3-его"));
         if(temp.toLowerCase().contains("судь")) temp = temp.substring(0, temp.toLowerCase().indexOf("судь"));
         return temp;
+    }
+
+    // Printout results for debugging
+    private void printout(Entry entry){
+        // Printout
+        System.out.println("Date: " + entry.getDate());
+        System.out.println("Case Number: " + entry.getCasenumber());
+        System.out.println("Result: " +entry.getResult());
+        System.out.println("Region: " + entry.getRegion());
+        System.out.println("Court: " + entry.getCourt());
+        System.out.println("Judge: " + entry.getJudge());
+        System.out.println("Plaintiff: " + entry.getPlaintiff());
+        System.out.println("Plaintiff Reps: " + entry.getPlaintiffreps());
+        System.out.println("Defendant: " + entry.getDefendant());
+        System.out.println("Defendant Reps: " + entry.getDefendantreps());
+        System.out.println("Total amount sought: " + entry.getAmountsought());
+        System.out.println("Amount Awarded: " + entry.getAmountawarded());
+        System.out.println("Expedited Proceedings: " + entry.getExpedited());
+        System.out.println("Breaks: " + entry.getBreaks());
+        System.out.println("File: " + inputFile.getName());
+        System.out.println();
+    }
+
+    // Write results to CSV file
+    private void writeCSV(Entry entry){
+        try{
+            // Write to CSV file
+            FileWriter fw = new FileWriter(outputFile, true);
+            fw.append(inputFile.getName() + ";");
+            fw.append(entry.getDate() + ";");
+            fw.append(entry.getCasenumber() + ";");
+            fw.append(entry.getResult() + ";");
+            fw.append(entry.getRegion() + ";");
+            fw.append(entry.getCourt()+ ";");
+            fw.append(entry.getJudge() + ";");
+            fw.append(entry.getPlaintiff() + ";");
+            fw.append(entry.getPlaintiffreps() + ";");
+            fw.append(entry.getDefendant() + ";");
+            fw.append(entry.getDefendantreps() + ";");
+            fw.append(entry.getAmountsought() + ";");
+            fw.append(entry.getAmountawarded() + ";");
+            fw.append(entry.getBreaks() + ";");
+            fw.append(entry.getExpedited() + "\n");
+            fw.flush();
+            fw.close();
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
     }
 }
 

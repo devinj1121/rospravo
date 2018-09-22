@@ -107,52 +107,16 @@ def collect_data(pages, option):
 
     return titles, descriptions, dates, links
 
-
-# A function which uses keywords to search for articles of interest from the main news pages of Pravo.ru
-def keyword_scrape(words):
-    keywords = words
-
-    # Populate pages
-    pravo_pages = []
-    advo_pages = []
-    for i in range (4):
-        pravo_pages.append('https://pravo.ru/news/?page=' + str(i + 1))
-        advo_pages.append('http://www.advgazeta.ru/newsd/nfrom' + str(i))
-
-    # Make and collect info from soup objects
-    pravo_titles, pravo_descriptions, pravo_dates, pravo_links = collect_data(pravo_pages, "pravo")
-    advo_titles, advo_descriptions, advo_dates, advo_links = collect_data(advo_pages, "advo")
-
-    # Create list to store article objects
-    articles = []
-
-    # Check pravo articles for keywords and current date
-    for i in range (len(pravo_titles)):
-        if any(keyword in pravo_titles[i].lower() or keyword in pravo_descriptions[i].lower() for keyword in keywords)\
-        and check_date(pravo_dates[i].split(' '), "pravo"):
-            articles.append(Article(pravo_titles[i], pravo_descriptions[i], pravo_dates[i], pravo_links[i], \
-            "pravo"))
-
-    # Check advo articles for keywords and current date
-    for i in range (len(advo_titles)):
-        if any(keyword in advo_titles[i].lower() or keyword in advo_descriptions[i].lower() for keyword in keywords)\
-        and check_date(advo_dates[i], "advo"):
-            articles.append(Article(advo_titles[i], advo_descriptions[i], advo_dates[i], advo_links[i], \
-            "advo"))
-
-    return construct_body(articles)
-
-
 # A function which takes advantage of pre-filtered pages and grabs the daily article from each
-def filter_scrape():
+def scrape():
     # Dictionary to store tags and their respective page codes
     pravo_dict = {'Адвокатура': '682', 'Рынок юридических услуг': '2728', 'Интервью': '1923',
     'Юридическое сообщество': '6780', 'Нотариат': '1599', 'Генеральная прокуратура РФ': '247',
     'Следственный комитет РФ': '6827', 'Юридическая карьера': '6811', 'Юридический консалтинг': '7171',
     'Арбитражный процесс': '4328'}
 
-    advo_dict = {'Адвокатура': '10', 'Юридическое орбазование': '23', 'Адвокатская кухня': '2',
-    'Адвокатура, государство, общество': '24', 'Адвокатская этика': '5', 'Этика юриста': '44'}
+    advo_dict = {'Адвокатура': 'advokatura', 'Юридическое орбазование': 'yuridicheskoe-obrazovanie', 
+    'Адвокатская деятельность': 'advokatskaya-deyatelnost'}
 
     # Populate pages with urls
     pravo_pages = []

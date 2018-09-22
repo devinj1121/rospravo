@@ -1,6 +1,5 @@
 import java.io.*;
 import java.util.*;
-import java.util.zip.GZIPInputStream;
 
 
 // A class with various methods for handling the xml in this project

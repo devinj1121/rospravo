@@ -2,6 +2,7 @@ import java.util.ArrayList;
 
 public class Entry {
     private String category;
+    private String vid_dokumenta;
     private String result;
     private String date;
     private String region;
@@ -17,9 +18,9 @@ public class Entry {
     private String amountawarded;
     private String breaks;
 
-    public String getCategory() {
-        return category;
-    }
+    public void setVid(String vid){this.vid_dokumenta = vid;}
+
+    public String getVid() {return vid_dokumenta;}
 
     public void setBreaks(String breaks){
         this.breaks = breaks;
@@ -31,6 +32,10 @@ public class Entry {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getCategory() {
+        return category;
     }
 
     public String getResult() {
