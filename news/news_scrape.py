@@ -122,7 +122,7 @@ def scrape():
     pravo_pages = []
     advo_pages =[]
     for key in pravo_dict:
-        pravo_pages.append('https://pravo.ru/tags/' + pravo_dict.get(key))
+        pravo_pages.append('https://pravo.ru/tags/' + pravo_dict.get(key) + "/")
     for key in advo_dict:
         advo_pages.append('http://www.advgazeta.ru/blog/rubric/' + advo_dict.get(key))
 
